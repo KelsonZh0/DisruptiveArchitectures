@@ -7,9 +7,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    database_url: str = ""
+    oracle_user: str = ""
+    oracle_password: SecretStr = SecretStr("")
+    oracle_host: str = "oracle.fiap.com.br"
+    oracle_port: int = Field(default=1521, ge=1, le=65535)
+    oracle_sid: str = "orcl"
+    oracle_service_name: str = ""
     gemini_api_key: SecretStr = SecretStr("")
-    gemini_model: str = "gemini-3.5-flash"
+    gemini_model: str = "gemini-3.8-flash"
+    gemini_fallback_models: str = "gemini-3.7-flash,gemini-3.6-flash,gemini-3.5-flash,gemini-3.5-flash-lite"
     cloudflare_account_id: str = ""
     cloudflare_api_token: SecretStr = SecretStr("")
     vectorize_index: str = "disruptive-architectures-index"
@@ -22,6 +28,12 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @property
+    def oracle_dsn(self) -> str:
+        if self.oracle_service_name:
+            return f"{self.oracle_host}:{self.oracle_port}/{self.oracle_service_name}"
+        return f"{self.oracle_host}:{self.oracle_port}/{self.oracle_sid}"
 
 
 @lru_cache(maxsize=1)

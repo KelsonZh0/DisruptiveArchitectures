@@ -1,7 +1,7 @@
 """RAG orchestration: history-aware retrieval and citation validation."""
 import time
 from typing import Any
-from backend.app.repositories.postgres import PostgresRepository
+from backend.app.repositories.oracle import OracleRepository
 from backend.app.repositories.vectorize import VectorizeRepository
 from backend.app.schemas.chat import AskRequest, AskResponse, Chunk
 from backend.app.services.embeddings import EmbeddingService
@@ -9,7 +9,7 @@ from backend.app.services.llm import LLMService
 from backend.app.services.retrieval import reciprocal_rank_fusion
 
 class RAGService:
-    def __init__(self, db: PostgresRepository, embeddings: EmbeddingService, vectors: VectorizeRepository, llm: LLMService, top_k: int, min_score: float, max_history_turns: int) -> None:
+    def __init__(self, db: OracleRepository, embeddings: EmbeddingService, vectors: VectorizeRepository, llm: LLMService, top_k: int, min_score: float, max_history_turns: int) -> None:
         self.db, self.embeddings, self.vectors, self.llm = db, embeddings, vectors, llm
         self.top_k, self.min_score, self.max_history_turns = top_k, min_score, max_history_turns
 

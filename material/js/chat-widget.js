@@ -10,7 +10,9 @@
  *      - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
  *      - js/chat-widget.js
  *
- * 3. Troque WORKER_URL abaixo pela URL do seu Worker publicado.
+ * 3. Antes de carregar este arquivo, configure:
+ *      window.DA_RAG_API_URL = "https://sua-api-publicada/ask";
+ *    Sem configuração, o widget usa http://127.0.0.1:8000/ask para testes locais.
  *
  * Nota técnica: o tema mkdocs-material usa navegação instantânea
  * (feature.navigation.instant) — ao clicar num link, o <body> inteiro é
@@ -23,13 +25,20 @@
  */
 
 (function () {
-  const WORKER_URL = "https://disruptive-architectures-rag-worker.arnaldojr.workers.dev/ask";
+  const API_URL = window.DA_RAG_API_URL || "http://127.0.0.1:8000/ask";
+  const MAX_HISTORY_MESSAGES = 16; // 8 trocas: o mesmo limite configurado no backend
+  const SITE_HOST = "kelsonzh0.github.io";
+  const SITE_PATH = "/DisruptiveArchitectures/";
+  const MENSAGEM_BOAS_VINDAS =
+    "Oi! Pergunte qualquer coisa sobre o conteúdo do curso (aulas, labs, conceitos).";
 
   // Estado que sobrevive à recriação do DOM entre navegações
   const estado = {
     aberto: false,
     mensagens: [], // { texto, who: 'user'|'bot', fontes? }
     enviando: false,
+    conversaId: null,
+    conversaToken: null,
   };
 
   function montarWidget() {
@@ -49,6 +58,7 @@
           display: flex; align-items: center; justify-content: center;
         }
         #da-rag-bubble:focus-visible, #da-rag-close:focus-visible,
+        #da-rag-new:focus-visible,
         #da-rag-send:focus-visible, #da-rag-input:focus-visible {
           outline: 3px solid var(--md-accent-fg-color, #ff4081);
           outline-offset: 2px;
@@ -67,6 +77,12 @@
           background: var(--md-primary-fg-color, #673ab7); color: white;
           padding: 10px 14px; font-weight: 600; font-size: 14px;
           display: flex; justify-content: space-between; align-items: center;
+        }
+        #da-rag-header-actions { display: flex; align-items: center; gap: 8px; }
+        #da-rag-new {
+          border: 1px solid rgba(255,255,255,0.65); border-radius: 5px;
+          background: transparent; color: white; cursor: pointer;
+          padding: 4px 7px; font: inherit; font-size: 11px;
         }
         #da-rag-close { background: none; border: none; color: white; cursor: pointer; font-size: 18px; }
         #da-rag-messages {
@@ -130,7 +146,10 @@
     widget.innerHTML = `
       <div id="da-rag-header">
         <span id="da-rag-title">Assistente do curso</span>
-        <button id="da-rag-close" aria-label="Fechar assistente">✕</button>
+        <div id="da-rag-header-actions">
+          <button id="da-rag-new" type="button">Nova conversa</button>
+          <button id="da-rag-close" aria-label="Fechar assistente">✕</button>
+        </div>
       </div>
       <div id="da-rag-messages" aria-live="polite" aria-busy="false"></div>
       <div id="da-rag-input-row">
@@ -157,6 +176,13 @@
     async function enviarPergunta() {
       const pergunta = inputEl.value.trim();
       if (!pergunta || estado.enviando) return;
+      const historico = estado.mensagens
+        .filter((m) => !m.loading && !m.boasVindas && (m.who === "user" || m.who === "bot"))
+        .slice(-MAX_HISTORY_MESSAGES)
+        .map((m) => ({
+          papel: m.who === "bot" ? "assistant" : "user",
+          conteudo: m.texto,
+        }));
       estado.enviando = true;
       inputEl.disabled = true;
       sendButton.disabled = true;
@@ -167,20 +193,33 @@
       const loadingId = addMessage("Consultando o material...", "bot", null, true);
 
       try {
-        const resp = await fetch(WORKER_URL, {
+        const body = { pergunta, historico };
+        if (estado.conversaId && estado.conversaToken) {
+          body.conversa_id = estado.conversaId;
+          body.conversa_token = estado.conversaToken;
+        }
+        const resp = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pergunta }),
+          body: JSON.stringify(body),
         });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
 
         removeMessage(loadingId);
+        if (typeof data.conversa_id === "string" && typeof data.conversa_token === "string") {
+          estado.conversaId = data.conversa_id;
+          estado.conversaToken = data.conversa_token;
+        }
 
         if (data.erro) {
           addMessage("Ops, deu um erro: " + data.erro, "bot");
+        } else if (data.detail) {
+          addMessage("Ops, deu um erro: " + data.detail, "bot");
+        } else if (typeof data.resposta !== "string") {
+          addMessage("O assistente retornou uma resposta inválida. Tente novamente.", "bot");
         } else {
-          addMessage(data.resposta, "bot", data.fontes);
+          addMessage(data.resposta, "bot", validarFontes(data.fontes));
         }
       } catch (e) {
         removeMessage(loadingId);
@@ -206,11 +245,18 @@
       bubble.setAttribute("aria-expanded", String(estado.aberto));
       if (estado.aberto) inputEl.focus();
       if (estado.aberto && estado.mensagens.length === 0) {
-        addMessage(
-          "Oi! Pergunte qualquer coisa sobre o conteúdo do curso (aulas, labs, conceitos).",
-          "bot"
-        );
+        addMessage(MENSAGEM_BOAS_VINDAS, "bot", null, false, true);
       }
+    });
+    widget.querySelector("#da-rag-new").addEventListener("click", () => {
+      if (estado.enviando) return;
+      estado.mensagens = [];
+      estado.conversaId = null;
+      estado.conversaToken = null;
+      const mensagensAtual = document.getElementById("da-rag-messages");
+      if (mensagensAtual) mensagensAtual.replaceChildren();
+      addMessage(MENSAGEM_BOAS_VINDAS, "bot", null, false, true);
+      inputEl.focus();
     });
     widget.querySelector("#da-rag-close").addEventListener("click", () => {
       widget.classList.remove("open");
@@ -289,6 +335,28 @@
     return html;
   }
 
+  function validarFontes(fontes) {
+    if (!Array.isArray(fontes)) return [];
+    return fontes.filter((fonte) => {
+      if (!fonte || typeof fonte.url !== "string") return false;
+      try {
+        const url = new URL(fonte.url);
+        return (
+          url.protocol === "https:" &&
+          url.hostname === SITE_HOST &&
+          url.pathname.startsWith(SITE_PATH) &&
+          !url.username &&
+          !url.password
+        );
+      } catch (e) {
+        return false;
+      }
+    }).map((fonte) => ({
+      titulo: typeof fonte.titulo === "string" ? fonte.titulo : fonte.url,
+      url: fonte.url,
+    }));
+  }
+
   function renderizarMensagem(container, m) {
     const wrap = document.createElement("div");
     wrap.className = `da-rag-msg ${m.who}`;
@@ -327,9 +395,9 @@
   }
 
   /** Adiciona mensagem ao estado E ao container atual do DOM (se existir). */
-  function addMessage(texto, who, fontes, loading) {
+  function addMessage(texto, who, fontes, loading, boasVindas) {
     const id = proximoId++;
-    const m = { id, texto, who, fontes, loading: !!loading };
+    const m = { id, texto, who, fontes, loading: !!loading, boasVindas: !!boasVindas };
     estado.mensagens.push(m);
 
     const container = document.getElementById("da-rag-messages");

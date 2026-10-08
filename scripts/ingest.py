@@ -43,8 +43,15 @@ def strip_front_matter(text: str) -> str:
     return re.sub(r"\A---\s*\n.*?\n---\s*(?:\n|\Z)", "", text, count=1, flags=re.DOTALL)
 
 
+def strip_embedded_images(text: str) -> str:
+    """Drop inline base64 image payloads while preserving their alt text."""
+    markdown_data_image = re.compile(r"!\[([^\]]*)\]\(data:image/[^;]+;base64,[^)]+\)", re.IGNORECASE | re.DOTALL)
+    return markdown_data_image.sub(lambda match: f"[Imagem: {match.group(1)}]" if match.group(1) else "", text)
+
+
 def markdown_blocks(text: str) -> list[str]:
     """Split markdown into paragraphs while keeping fenced blocks intact."""
+    text = strip_embedded_images(text)
     blocks: list[str] = []
     current: list[str] = []
     in_fence = False
