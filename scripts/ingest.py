@@ -191,8 +191,8 @@ def heading_anchor(section_title: str) -> str:
     return slugify(title)
 
 
-def stable_id(relative_path: Path, section_title: str, index: int, text: str) -> str:
-    raw = f"{relative_path.as_posix()}\0{section_title}\0{index}\0{text}"
+def stable_id(relative_path: Path, section_title: str, index: int) -> str:
+    raw = f"{relative_path.as_posix()}\0{section_title}\0{index}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
@@ -225,7 +225,7 @@ def extract_file(path: Path, source_root: Path, base_url: str) -> Iterable[dict]
             section_counts[title] = idx + 1
             anchor = heading_anchor(title) if title else ""
             yield {
-                "id": stable_id(relative, title, idx, chunk),
+                "id": stable_id(relative, title, idx),
                 "titulo": page_title,
                 "secao": title,
                 "url": url + (f"#{anchor}" if anchor else ""),

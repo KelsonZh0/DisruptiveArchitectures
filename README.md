@@ -72,3 +72,34 @@ Crie um projeto PostgreSQL/Supabase e execute
 `backend/migrations/001_initial_schema.sql` no SQL Editor. A migration cria as
 tabelas e a função de busca textual. Ela ainda não carrega os chunks: essa parte
 será conectada ao banco na próxima etapa.
+
+## Assistente RAG — etapa 3 (API local)
+
+O backend oferece POST /ask, GET /health e GET /conversas/{id}. Para instalar
+e iniciar no PowerShell, a partir da raiz do repositório:
+
+~~~powershell
+py -3.11 -m venv backend\.venv
+.\backend\.venv\Scripts\Activate.ps1
+python -m pip install -r backend\requirements.txt
+$env:PYTHONPATH = (Get-Location).Path
+uvicorn backend.app.main:app --reload
+~~~
+
+Abra http://127.0.0.1:8000/health para conferir o processo. O endpoint /ask só
+funcionará quando houver dados no PostgreSQL e as variáveis de ambiente
+estiverem configuradas: DATABASE_URL, GEMINI_API_KEY, CLOUDFLARE_ACCOUNT_ID e
+CLOUDFLARE_API_TOKEN. Configure-as apenas no terminal ou em um .env local que
+não seja commitado. A carga dos chunks para PostgreSQL ainda precisa ser ligada
+ao pipeline de ingestão.
+
+Para executar os testes automatizados:
+
+~~~powershell
+$env:PYTHONPATH = (Get-Location).Path
+python -m pytest backend\tests -q
+~~~
+
+Os testes usam doubles para não chamar Gemini, Cloudflare ou PostgreSQL. Eles
+cobrem ingestão, slugs e IDs, fusão RRF, validação de citações, contrato dos
+handlers, limite de requisições e prompt estruturado.
