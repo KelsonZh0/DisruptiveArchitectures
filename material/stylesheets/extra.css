@@ -1,0 +1,124 @@
+/* Responsive refinements for the Material for MkDocs layout. */
+
+/* Give the desktop navigation enough room for course and lab names. */
+:root {
+  --md-sidebar-width: 15.2rem;
+}
+
+.md-sidebar--primary {
+  width: var(--md-sidebar-width);
+}
+
+.md-sidebar--primary .md-nav--primary,
+.md-sidebar--primary .md-nav__list {
+  flex-basis: 100% !important;
+  max-width: none !important;
+  width: 100% !important;
+}
+
+.md-sidebar--primary .md-nav--primary {
+  flex-shrink: 0 !important;
+  width: calc(var(--md-sidebar-width) - 0.4rem) !important;
+}
+
+.md-nav__link {
+  min-width: 0;
+}
+
+.md-nav__link .md-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 76.2344em) {
+  [dir="ltr"] .md-sidebar--primary {
+    left: calc(-1 * var(--md-sidebar-width)) !important;
+  }
+
+  [dir="rtl"] .md-sidebar--primary {
+    right: calc(-1 * var(--md-sidebar-width)) !important;
+  }
+
+  [dir="ltr"] [data-md-toggle="drawer"]:checked ~ .md-container .md-sidebar--primary {
+    transform: translateX(var(--md-sidebar-width)) !important;
+  }
+
+  [dir="rtl"] [data-md-toggle="drawer"]:checked ~ .md-container .md-sidebar--primary {
+    transform: translateX(calc(-1 * var(--md-sidebar-width))) !important;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  :root {
+    --md-sidebar-width: min(15.2rem, 94vw);
+  }
+
+  .md-sidebar--primary {
+    width: var(--md-sidebar-width);
+  }
+
+  .md-sidebar--primary .md-nav__link .md-ellipsis {
+    font-size: 0.68rem;
+  }
+
+  /* Allow the active title to wrap instead of clipping it in the header. */
+  .md-header,
+  .md-header__inner {
+    height: auto;
+    min-height: 3.75rem;
+  }
+
+  .md-header__inner {
+    align-items: center;
+  }
+
+  .md-header__title {
+    height: auto;
+    min-height: 3.75rem;
+    line-height: 1.15;
+    overflow: visible;
+    padding-block: 0.35rem;
+  }
+
+  .md-header__topic {
+    align-items: center;
+    height: auto;
+    max-width: 100%;
+    min-height: 3.75rem;
+    white-space: normal;
+  }
+
+  .md-header__topic .md-ellipsis {
+    display: block;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    font-size: 0.85rem;
+    line-height: 1.15;
+  }
+
+  /* Keep every breadcrumb visible without a horizontal scroll strip. */
+  .md-path {
+    height: auto;
+    overflow: visible;
+  }
+
+  .md-path__list {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.4rem;
+  }
+
+  .md-path__item {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Move the floating chat control out of the notebook button's hit area. */
+  #da-rag-bubble {
+    bottom: max(14px, env(safe-area-inset-bottom)) !important;
+    right: 0 !important;
+  }
+}

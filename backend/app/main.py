@@ -21,7 +21,10 @@ def create_app(settings: Settings | None = None, rag_service: RAGService | None 
         db=db,
         embeddings=EmbeddingService(config.cloudflare_account_id, config.cloudflare_api_token.get_secret_value()),
         vectors=VectorizeRepository(config.cloudflare_account_id, config.cloudflare_api_token.get_secret_value(), config.vectorize_index),
-        llm=GeminiService(config.gemini_api_key.get_secret_value(), config.gemini_model, config.gemini_fallback_models),
+        llm=GeminiService(
+            config.gemini_api_key.get_secret_value(), config.gemini_model,
+            config.gemini_fallback_models, config.groq_api_key.get_secret_value(), config.groq_model,
+        ),
         top_k=config.retrieval_top_k, min_score=config.minimum_vector_score, max_history_turns=config.max_history_turns,
     )
     app.state.rate_limiter = InMemoryRateLimiter(config.rate_limit_per_minute)

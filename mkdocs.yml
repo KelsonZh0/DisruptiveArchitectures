@@ -46,7 +46,6 @@ theme:
     - announce.dismiss
     - navigation.tabs
     - navigation.top
-    - navigation.instant
     - navigation.indexes
     - navigation.path
     - navigation.footer
@@ -68,6 +67,7 @@ extra_javascript:
 
 extra_css:
  - css/termynal.css
+ - stylesheets/extra.css
 
 # Extensions / plugins
 plugins:

@@ -108,6 +108,7 @@ $env:ORACLE_PORT = "1521"
 $env:ORACLE_SID = "orcl"
 # Se a FIAP fornecer service name, use-o no lugar do SID:
 # $env:ORACLE_SERVICE_NAME = "SERVICE_NAME_FORNECIDO"
+$env:GROQ_API_KEY = "SUA_CHAVE_GROQ" # opcional: fallback depois dos modelos Gemini
 $env:PYTHONPATH = (Get-Location).Path
 py -3.14 -m uvicorn backend.app.main:app --reload --port 8000
 ~~~
@@ -115,7 +116,8 @@ py -3.14 -m uvicorn backend.app.main:app --reload --port 8000
 Abra http://127.0.0.1:8000/health para conferir o processo. O endpoint /ask só
 funcionará quando houver dados no Oracle e as variáveis de ambiente
 estiverem configuradas: ORACLE_USER, ORACLE_PASSWORD, GEMINI_API_KEY,
-CLOUDFLARE_ACCOUNT_ID e CLOUDFLARE_API_TOKEN. Configure-as apenas no terminal
+CLOUDFLARE_ACCOUNT_ID e CLOUDFLARE_API_TOKEN. GROQ_API_KEY é opcional e ativa
+o fallback Groq; sem ela, o backend usa apenas Gemini. Configure as chaves no terminal
 ou em um .env local que não seja commitado. O driver `python-oracledb` usa Thin
 mode por padrão e não exige Oracle Client para uma conexão TCP normal. Para
 consultas ao Vectorize, o token também precisa de `Vectorize Read`; para
@@ -129,6 +131,11 @@ ou cota, tenta em sequência `gemini-3.7-flash`, `gemini-3.6-flash`,
 backend. Separe os fallbacks por vírgula. Isso ajuda quando o limite específico
 do modelo acaba; não resolve uma cota ou limite de gastos esgotado para todo o
 projeto Google.
+Depois de esgotar os modelos Gemini por cota, limite ou indisponibilidade
+temporária, o backend tenta `openai/gpt-oss-20b` pela API Groq quando
+`GROQ_API_KEY` está configurada. Esse modelo suporta saída JSON estruturada;
+os limites e a disponibilidade dependem da conta Groq. O nome do modelo pode
+ser alterado com `GROQ_MODEL`.
 
 Para executar os testes automatizados:
 

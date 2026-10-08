@@ -14,14 +14,9 @@
  *      window.DA_RAG_API_URL = "https://sua-api-publicada/ask";
  *    Sem configuração, o widget usa http://127.0.0.1:8000/ask para testes locais.
  *
- * Nota técnica: o tema mkdocs-material usa navegação instantânea
- * (feature.navigation.instant) — ao clicar num link, o <body> inteiro é
- * substituído via JS, sem reload de página. Isso apaga qualquer elemento
- * que a gente tenha injetado manualmente no DOM. Pra sobreviver a isso,
- * religamos o widget toda vez que o observable global `document$` do
- * mkdocs-material emitir um evento de navegação (inclusive na primeira
- * carga). O histórico da conversa fica guardado fora do DOM (em `estado`),
- * então não se perde ao trocar de página.
+ * O site usa navegação de página normal para que o widget seja inicializado
+ * novamente em cada página do MkDocs. O estado da conversa fica nesta página
+ * e reinicia quando o navegador carrega outra página.
  */
 
 (function () {
@@ -413,37 +408,12 @@
     if (el) el.remove();
   }
 
-  // mkdocs-material declara `document$` com `const`/`let` no escopo global
-  // do script do tema. Isso significa que a variável NÃO aparece como
-  // propriedade de `window` (só `var` faz isso) — mas continua acessível
-  // como identificador solto em scripts carregados depois na mesma página,
-  // porque compartilham o mesmo ambiente léxico global. Por isso checamos
-  // `document$` direto (com `typeof`, que nunca lança erro mesmo se a
-  // variável não existir), e não `window.document$`.
-  let jaSubscrito = false;
-  try {
-    if (typeof document$ !== "undefined" && typeof document$.subscribe === "function") {
-      document$.subscribe(() => montarWidget());
-      jaSubscrito = true;
-    }
-  } catch (e) {
-    // segue pro fallback abaixo
+  // O site usa navegação de página normal (sem navigation.instant), então
+  // este script é executado novamente a cada página. Inicializamos após o
+  // DOM ficar pronto para garantir que document.body já exista.
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", montarWidget, { once: true });
+  } else {
+    montarWidget();
   }
-
-  if (!jaSubscrito) {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", montarWidget);
-    } else {
-      montarWidget();
-    }
-  }
-
-  // Rede de segurança extra, só pro caso de document$ não ter funcionado:
-  // observa apenas os filhos diretos do <body> (não a árvore inteira, pra
-  // não gerar overhead) e remonta o widget se ele for removido de lá.
-  new MutationObserver(() => {
-    if (!document.getElementById("da-rag-widget")) {
-      montarWidget();
-    }
-  }).observe(document.body, { childList: true, subtree: false });
 })();
