@@ -1,13 +1,14 @@
 name: Reindexar assistente RAG
 
-# Roda automaticamente sempre que houver mudança em material/
-# (novas aulas, edições, etc). Também pode ser disparado manualmente
-# pela aba "Actions" do GitHub (workflow_dispatch).
 on:
   push:
     branches: [master, main]
     paths:
       - "material/**/*.md"
+      - "material/**/*.ipynb"
+      - "scripts/ingest.py"
+      - "scripts/embed_with_workers_ai.py"
+      - "scripts/build_vectorize_ndjson.py"
   workflow_dispatch:
 
 jobs:
@@ -21,18 +22,17 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          
-      - name: Instala requests
-        working-directory: scripts
-        run: |
-          pip install requests
 
-      - name: Extrair e quebrar o material em chunks
+      - name: Instalar dependências
+        run: python -m pip install requests
+
+      - name: Extrair Markdown e notebooks em chunks
         working-directory: scripts
         run: |
           python ingest.py \
             --material-dir ../material \
-            --base-url https://arnaldojr.github.io/DisruptiveArchitectures
+            --base-url https://kelsonzh0.github.io/DisruptiveArchitectures \
+            --output chunks.jsonl
 
       - name: Gerar embeddings via Workers AI
         working-directory: scripts
@@ -41,14 +41,14 @@ jobs:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           python embed_with_workers_ai.py \
-            --input chunks.json \
-            --output chunks_embedded.json
+            --input chunks.jsonl \
+            --output chunks_embedded.jsonl
 
       - name: Converter para o formato do Vectorize
         working-directory: scripts
         run: |
           python build_vectorize_ndjson.py \
-            --input chunks_embedded.json \
+            --input chunks_embedded.jsonl \
             --output vectors.ndjson
 
       - name: Configurar Node.js

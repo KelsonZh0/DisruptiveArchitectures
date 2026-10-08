@@ -11,26 +11,32 @@ import json
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", default="chunks_embedded.json")
+    parser.add_argument("--input", default="chunks_embedded.jsonl", help="Arquivo JSONL com embeddings")
     parser.add_argument("--output", default="vectors.ndjson")
     args = parser.parse_args()
 
-    chunks = json.loads(open(args.input, encoding="utf-8").read())
-
-    with open(args.output, "w", encoding="utf-8") as f:
-        for i, c in enumerate(chunks):
-            linha = {
-                "id": str(i),
-                "values": c["embedding"],
+    total = 0
+    with open(args.input, encoding="utf-8") as source, open(args.output, "w", encoding="utf-8", newline="\n") as destination:
+        for line in source:
+            if not line.strip():
+                continue
+            chunk = json.loads(line)
+            if "embedding" not in chunk:
+                raise ValueError(f"Chunk {chunk.get('id', '<sem id>')} sem embedding")
+            vector = {
+                "id": chunk["id"],
+                "values": chunk["embedding"],
                 "metadata": {
-                    "titulo": c["titulo"],
-                    "url": c["url"],
-                    "texto": c["texto"][:800],  # trunca pra não estourar limite de metadata
+                    "titulo": chunk["titulo"],
+                    "secao": chunk.get("secao", ""),
+                    "url": chunk["url"],
+                    "origem": chunk["origem"],
                 },
             }
-            f.write(json.dumps(linha, ensure_ascii=False) + "\n")
+            destination.write(json.dumps(vector, ensure_ascii=False) + "\n")
+            total += 1
 
-    print(f"Salvo {len(chunks)} vetores em {args.output}")
+    print(f"Salvo {total} vetores em {args.output}")
 
 
 if __name__ == "__main__":
