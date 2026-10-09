@@ -180,7 +180,7 @@
         #da-rag-bubble.is-open .da-rag-trigger-close { opacity: 1; transform: rotate(0) scale(1); }
         #da-rag-bubble .da-rag-trigger-label {
           display: inline-block; margin-left: 32px; overflow: hidden; white-space: nowrap;
-          font: 600 13px/1 var(--md-text-font-family, sans-serif);
+          font: 600 13px/1 "Segoe UI", Arial, sans-serif;
           opacity: 1; transform: translateX(0);
           transition: opacity 120ms ease, transform 180ms cubic-bezier(.23, 1, .32, 1), max-width 180ms ease;
           max-width: 160px;

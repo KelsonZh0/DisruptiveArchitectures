@@ -104,8 +104,8 @@
 }
 
 .course-home {
-  max-width: 68ch;
-  margin: 0 auto 2.5rem;
+  max-width: none;
+  margin: 0 0 2.5rem;
 }
 
 .course-home > h1 {
@@ -117,6 +117,7 @@
 }
 
 .course-home > p {
+  max-width: 68ch;
   margin: 0 0 1.5rem;
   color: var(--md-default-fg-color--light);
   font-size: 1.15rem;
