@@ -187,10 +187,10 @@
         }
         #da-rag-bubble.is-compact .da-rag-trigger-label { max-width: 0; opacity: 0; transform: translateX(5px); }
         #da-rag-bubble:focus-visible, #da-rag-close:focus-visible,
-        #da-rag-new:focus-visible,
-        #da-rag-send:focus-visible, #da-rag-input:focus-visible,
-        .da-rag-suggestion:focus-visible {
-          outline: 3px solid var(--md-accent-fg-color, #ff4081);
+        #da-rag-new:focus-visible, #da-rag-menu > summary:focus-visible,
+        #da-rag-send:focus-visible, .da-rag-suggestion:focus-visible,
+        .da-rag-retry:focus-visible {
+          outline: 2px solid var(--da-rag-focus-color, #3349B4);
           outline-offset: 2px;
         }
         #da-rag-widget {
@@ -203,47 +203,77 @@
           display: none; flex-direction: column; overflow: hidden;
           opacity: 0; transform: scale(.95); transform-origin: bottom right;
           visibility: hidden; pointer-events: none;
-          font-family: var(--md-text-font-family, var(--md-text-font, sans-serif));
+          font-family: "Segoe UI", Arial, sans-serif;
+          line-height: 1.5;
           border: 1px solid var(--md-default-fg-color--lightest, rgba(127,127,127,.22));
         }
+        #da-rag-widget, #da-rag-widget * { box-sizing: border-box; }
+        [data-md-color-scheme="default"] #da-rag-widget {
+          --da-rag-focus-color: #4338A8;
+          --da-rag-input-border: #d8d6e2;
+          --da-rag-header-bg: #f0eff7;
+          --da-rag-header-fg: #242238;
+          --da-rag-header-border: #dedce8;
+          --da-rag-scroll-thumb: #c2bfd0;
+        }
+        [data-md-color-scheme="slate"] #da-rag-widget {
+          --da-rag-focus-color: #A6B6FF;
+          --da-rag-input-border: #34405A;
+          --da-rag-header-bg: #232B3E;
+          --da-rag-header-fg: #E6EBF5;
+          --da-rag-header-border: #34405A;
+          --da-rag-scroll-thumb: #52617e;
+        }
+        #da-rag-widget button, #da-rag-widget input { font-family: inherit; }
         #da-rag-widget.open { display: flex; opacity: 1; transform: scale(1); visibility: visible; pointer-events: auto; }
         #da-rag-widget.closing { display: flex; visibility: visible; pointer-events: none; }
         #da-rag-header {
-          background: var(--md-primary-fg-color, #3730a3); color: var(--md-primary-bg-color, #fff);
-          padding: 10px 14px; font-weight: 600; font-size: 14px;
+          position: relative; z-index: 1; flex: 0 0 auto;
+          background: var(--da-rag-header-bg, #f0eff7); color: var(--da-rag-header-fg, #242238);
+          border-bottom: 1px solid var(--da-rag-header-border, #dedce8);
+          padding: 10px 12px 10px 16px; font-weight: 600; font-size: 14px;
           display: flex; justify-content: space-between; align-items: center;
           cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
         }
         #da-rag-header.is-dragging { cursor: grabbing; }
-        #da-rag-header-actions { display: flex; align-items: center; gap: 8px; }
-        #da-rag-header-actions button, #da-rag-header-actions summary { cursor: pointer; touch-action: auto; }
+        #da-rag-header-actions { display: flex; align-items: center; gap: 4px; }
+        #da-rag-header-actions > button, #da-rag-menu > summary {
+          box-sizing: border-box; width: 36px; height: 36px; padding: 0;
+          display: grid; place-items: center; border: 0; border-radius: 10px;
+          background: transparent; color: inherit; cursor: pointer; touch-action: auto;
+          transition: background-color 150ms ease, transform 120ms ease-out;
+        }
+        #da-rag-header-actions > button:hover, #da-rag-menu > summary:hover {
+          background: color-mix(in srgb, currentColor 10%, transparent);
+        }
+        #da-rag-header-actions > button:active, #da-rag-menu > summary:active { transform: scale(.96); }
+        #da-rag-header-actions svg { width: 18px; height: 18px; display: block; }
         #da-rag-menu { position: relative; }
-        #da-rag-menu > summary { list-style: none; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 5px; font-size: 19px; line-height: 1; }
+        #da-rag-menu > summary { list-style: none; }
         #da-rag-menu > summary::-webkit-details-marker { display: none; }
-        #da-rag-menu-content { position: absolute; z-index: 2; right: 0; top: calc(100% + 7px); width: max-content; padding: 5px; border-radius: 8px; background: var(--md-default-bg-color, #fff); color: var(--md-default-fg-color, #000); box-shadow: 0 5px 18px rgba(0,0,0,.24); border: 1px solid var(--md-default-fg-color--lightest, rgba(127,127,127,.22)); }
+        #da-rag-menu-content { position: absolute; z-index: 2; right: 0; top: calc(100% + 7px); width: max-content; max-width: calc(100vw - 32px); padding: 5px; border-radius: 8px; background: var(--md-default-bg-color, #fff); color: var(--md-default-fg-color, #000); box-shadow: 0 5px 18px rgba(0,0,0,.24); border: 1px solid var(--md-default-fg-color--lightest, rgba(127,127,127,.22)); }
         #da-rag-reset-position { border: 0; border-radius: 5px; padding: 8px 10px; background: transparent; color: inherit; font: inherit; font-size: 12px; white-space: nowrap; }
         #da-rag-reset-position:hover { background: var(--md-default-bg-color--light, var(--md-code-bg-color, #f0f0f0)); }
-        #da-rag-new {
-          border: 1px solid currentColor; border-radius: 5px;
-          background: transparent; color: inherit; cursor: pointer;
-          padding: 4px 7px; font: inherit; font-size: 11px;
-        }
-        #da-rag-close { background: none; border: none; color: inherit; cursor: pointer; font-size: 18px; }
         #da-rag-messages {
-          flex: 1; overflow-y: auto; padding: 12px; font-size: 13.5px; line-height: 1.4;
+          box-sizing: border-box; flex: 1; min-width: 0; overflow-y: auto;
+          padding: 14px 16px; font-size: 13.5px; line-height: 1.5;
+          scrollbar-width: thin; scrollbar-color: var(--da-rag-scroll-thumb, #c2bfd0) transparent;
         }
+        #da-rag-messages::-webkit-scrollbar { width: 6px; }
+        #da-rag-messages::-webkit-scrollbar-track { background: transparent; }
+        #da-rag-messages::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--da-rag-scroll-thumb, #c2bfd0); }
         .da-rag-msg { margin-bottom: 12px; }
-        .da-rag-msg.user { text-align: right; }
+        .da-rag-msg.user { display: flex; justify-content: flex-end; }
         .da-rag-msg .bubble {
-          display: inline-block; padding: 8px 12px; border-radius: 10px; max-width: 85%;
-          text-align: left; white-space: pre-wrap;
+          display: block; box-sizing: border-box; width: fit-content; max-width: 85%;
+          padding: 8px 12px; border-radius: 12px; text-align: left;
+          white-space: pre-wrap; overflow-wrap: anywhere;
         }
         .da-rag-msg.user .bubble { background: var(--md-primary-fg-color, #3730a3); color: var(--md-primary-bg-color, #fff); }
         .da-rag-msg.bot .bubble {
-          background: var(--md-default-bg-color--light, var(--md-code-bg-color, #f0f0f0));
-          border: 1px solid var(--md-default-fg-color--lightest, transparent);
+          width: 100%; max-width: 100%; padding: 0; border: 0; border-radius: 0;
+          background: transparent; color: inherit;
         }
-        .da-rag-msg.error .bubble { border-color: var(--md-accent-fg-color, #b9382b); }
         .da-rag-retry {
           display: inline-flex; margin: 8px 0 0; padding: 5px 9px; border-radius: 6px;
           border: 1px solid var(--md-accent-fg-color, #b9382b);
@@ -303,14 +333,41 @@
           #da-rag-bubble, #da-rag-bubble .da-rag-trigger-icon, #da-rag-bubble .da-rag-trigger-label { transition: none; }
           #da-rag-bubble.is-snapping { transition: none; }
         }
-        .da-rag-sources { margin-top: 6px; font-size: 11.5px; opacity: 0.75; }
-        .da-rag-sources a { color: inherit; }
-        #da-rag-input-row { display: flex; border-top: 1px solid var(--md-default-fg-color--lightest, rgba(0,0,0,0.1)); }
-        #da-rag-input {
-          flex: 1; border: none; padding: 10px; font-size: 13.5px; outline: none;
-          background: transparent; color: inherit;
+        .da-rag-sources { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 9px; font-size: 10px; }
+        .da-rag-source-label { color: var(--md-default-fg-color--light); font-weight: 600; }
+        .da-rag-source-chip {
+          display: inline-flex; box-sizing: border-box; min-width: 0; max-width: min(100%, 220px);
+          overflow: hidden; padding: 2px 8px; border: 1px solid var(--md-default-fg-color--lightest, #d8d6e2);
+          border-radius: 999px; background: var(--md-default-bg-color--light, #f0eff7);
+          color: var(--md-default-fg-color, #242238); text-decoration: none; white-space: nowrap;
+          text-overflow: ellipsis; font-size: 10.5px; line-height: 1.5;
+          transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
         }
-        #da-rag-send { border: none; background: none; color: var(--md-accent-fg-color, currentColor); cursor: pointer; padding: 0 14px; font-size: 16px; }
+        .da-rag-source-chip:hover { border-color: var(--da-rag-focus-color, #3349B4); color: var(--da-rag-focus-color, #3349B4); }
+        .da-rag-source-chip:focus-visible { outline: 2px solid var(--da-rag-focus-color, #3349B4); outline-offset: 2px; }
+        #da-rag-input-row {
+          box-sizing: border-box; display: flex; align-items: center; gap: 8px; min-width: 0;
+          padding: 10px 12px 12px; border-top: 1px solid var(--da-rag-header-border, #dedce8);
+          background: var(--md-default-bg-color, #fff);
+        }
+        #da-rag-input {
+          box-sizing: border-box; flex: 1 1 auto; min-width: 0; width: 100%; height: 42px;
+          border: 1px solid var(--da-rag-input-border, #d8d6e2); border-radius: 16px;
+          padding: 9px 12px; outline: none; background: transparent; color: inherit;
+          font: inherit; font-size: 13px; line-height: 1.5;
+          transition: border-color 150ms ease, box-shadow 150ms ease;
+        }
+        #da-rag-input::placeholder { color: var(--md-default-fg-color--light, #6b6878); opacity: 1; }
+        #da-rag-input:focus { border-color: var(--da-rag-focus-color, #3349B4); box-shadow: 0 0 0 1px var(--da-rag-focus-color, #3349B4); }
+        #da-rag-send {
+          box-sizing: border-box; flex: 0 0 42px; width: 42px; height: 42px;
+          display: grid; place-items: center; padding: 0; border: 0; border-radius: 12px;
+          background: transparent; color: var(--da-rag-focus-color, #3349B4); cursor: pointer;
+          transition: background-color 150ms ease, transform 120ms ease-out;
+        }
+        #da-rag-send:hover:not(:disabled) { background: color-mix(in srgb, var(--da-rag-focus-color, #3349B4) 12%, transparent); }
+        #da-rag-send:active:not(:disabled) { transform: scale(.96); }
+        #da-rag-send svg { width: 19px; height: 19px; display: block; }
         #da-rag-send:disabled { cursor: wait; opacity: 0.45; }
         .da-rag-loading { opacity: 0.6; font-style: italic; }
         @media (max-width: 480px) {
@@ -358,18 +415,20 @@
       <div id="da-rag-header">
         <span id="da-rag-title">Assistente do curso</span>
         <div id="da-rag-header-actions">
-          <button id="da-rag-new" type="button">Nova conversa</button>
+          <button id="da-rag-new" type="button" aria-label="Nova conversa" title="Nova conversa">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" opacity=".7"/></svg>
+          </button>
           <details id="da-rag-menu">
-            <summary aria-label="Opções de posição" title="Opções">⋯</summary>
+            <summary aria-label="Opções de posição" title="Opções de posição"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></summary>
             <div id="da-rag-menu-content"><button id="da-rag-reset-position" type="button">Voltar à posição padrão</button></div>
           </details>
-          <button id="da-rag-close" aria-label="Fechar assistente">✕</button>
+          <button id="da-rag-close" type="button" aria-label="Fechar assistente" title="Fechar assistente"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         </div>
       </div>
       <div id="da-rag-messages" aria-live="polite" aria-busy="false"></div>
       <div id="da-rag-input-row">
         <input id="da-rag-input" type="text" placeholder="Pergunte sobre o conteúdo do curso..." aria-label="Pergunta" />
-        <button id="da-rag-send" type="button" aria-label="Enviar pergunta">➤</button>
+        <button id="da-rag-send" type="button" aria-label="Enviar pergunta" title="Enviar pergunta"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M4 12 20 4l-5.5 16-3-6.5L4 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M11.5 13.5 20 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
       </div>
     `;
     document.body.appendChild(widget);
@@ -1017,24 +1076,29 @@
 
   function validarFontes(fontes) {
     if (!Array.isArray(fontes)) return [];
-    return fontes.filter((fonte) => {
+    const unicas = new Map();
+    fontes.forEach((fonte) => {
       if (!fonte || typeof fonte.url !== "string") return false;
       try {
         const url = new URL(fonte.url);
-        return (
+        const valida = (
           url.protocol === "https:" &&
           url.hostname === SITE_HOST &&
           url.pathname.startsWith(SITE_PATH) &&
           !url.username &&
           !url.password
         );
+        if (valida && !unicas.has(url.href)) {
+          unicas.set(url.href, {
+            titulo: typeof fonte.titulo === "string" ? fonte.titulo : url.href,
+            url: url.href,
+          });
+        }
       } catch (e) {
-        return false;
+        // Ignora fontes inválidas.
       }
-    }).map((fonte) => ({
-      titulo: typeof fonte.titulo === "string" ? fonte.titulo : fonte.url,
-      url: fonte.url,
-    }));
+    });
+    return Array.from(unicas.values());
   }
 
   function renderizarMensagem(container, m) {
@@ -1082,15 +1146,19 @@
     if (m.fontes && m.fontes.length) {
       const src = document.createElement("div");
       src.className = "da-rag-sources";
-      src.appendChild(document.createTextNode("Fontes: "));
-      m.fontes.forEach((f, index) => {
+      const label = document.createElement("span");
+      label.className = "da-rag-source-label";
+      label.textContent = "Fontes";
+      src.appendChild(label);
+      validarFontes(m.fontes).forEach((f) => {
         const link = document.createElement("a");
+        link.className = "da-rag-source-chip";
         link.href = f.url;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
         link.textContent = f.titulo || f.url;
+        link.title = f.titulo || f.url;
         src.appendChild(link);
-        if (index < m.fontes.length - 1) src.appendChild(document.createTextNode(" · "));
       });
       wrap.appendChild(src);
     }

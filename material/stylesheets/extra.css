@@ -169,20 +169,12 @@
   margin-top: 0.5rem;
 }
 
-[data-md-color-scheme="slate"] .course-home .grid.cards > ul > li:first-child .md-button {
-  border-color: #a6b6ff;
-  color: #a6b6ff;
+.course-home .grid.cards > ul > li:first-child .md-button {
+  --course-button-color: #4338a8;
 }
 
-[data-md-color-scheme="slate"] .course-home .grid.cards > ul > li:nth-child(2) .md-button {
-  border-color: #ff9b7c;
-  color: #ff9b7c;
-}
-
-[data-md-color-scheme="slate"] .course-home .grid.cards .md-button:hover,
-[data-md-color-scheme="slate"] .course-home .grid.cards .md-button:focus-visible {
-  background: var(--course-button-color);
-  color: #1a2030;
+.course-home .grid.cards > ul > li:nth-child(2) .md-button {
+  --course-button-color: #e76e5d;
 }
 
 [data-md-color-scheme="slate"] .course-home .grid.cards > ul > li:first-child .md-button {
@@ -191,6 +183,34 @@
 
 [data-md-color-scheme="slate"] .course-home .grid.cards > ul > li:nth-child(2) .md-button {
   --course-button-color: #ff9b7c;
+}
+
+.course-home .grid.cards .md-button {
+  border: 1px solid var(--course-button-color);
+  background: transparent;
+  color: var(--course-button-color);
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 120ms ease-out;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .course-home .grid.cards .md-button:hover {
+    border-color: var(--course-button-color);
+    background: color-mix(in srgb, var(--course-button-color) 12%, transparent);
+    color: var(--course-button-color);
+  }
+}
+
+.course-home .grid.cards .md-button:focus-visible {
+  border-color: var(--course-button-color);
+  background: color-mix(in srgb, var(--course-button-color) 12%, transparent);
+  color: var(--course-button-color);
+  outline: 2px solid var(--course-button-color);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+
+.course-home .grid.cards .md-button:active {
+  transform: scale(0.98);
 }
 
 /* Give the desktop navigation enough room for course and lab names. */
