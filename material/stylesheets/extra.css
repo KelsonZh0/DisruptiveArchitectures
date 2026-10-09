@@ -96,6 +96,7 @@
   width: 100%;
   max-width: none !important;
   padding-inline: clamp(1rem, 3vw, 1.5rem);
+  padding-bottom: 6rem;
 }
 
 .md-typeset:has(.course-home) > :not(.course-home) {
@@ -104,33 +105,47 @@
 }
 
 .course-home {
-  max-width: none;
-  margin: 0 0 2.5rem;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 2.5rem;
 }
 
 .course-home > h1 {
-  max-width: 24ch;
-  margin-bottom: 0.45rem;
-  font-size: clamp(2rem, 4vw, 3rem);
+  max-width: none;
+  margin-bottom: 0.6rem;
+  color: var(--md-default-fg-color);
+  font-size: clamp(2.75rem, 3.2vw, 3rem);
+  line-height: 1.15;
   font-weight: 500;
   letter-spacing: -0.035em;
 }
 
+.course-home-title-accent {
+  color: var(--md-typeset-a-color);
+}
+
 .course-home > p {
   max-width: 68ch;
-  margin: 0 0 1.5rem;
+  margin: 0 0 2rem;
   color: var(--md-default-fg-color--light);
   font-size: 1.15rem;
+}
+
+.course-home .grid.cards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-block: 0 1.75rem;
 }
 
 .course-home .grid.cards > ul > li {
   position: relative;
   overflow: hidden;
-  padding-top: 1.45rem;
+  padding: 1.8rem 1.6rem 1.6rem;
 }
 
-.course-home .grid.cards {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.course-home .grid.cards > ul > li p {
+  max-width: 60ch;
 }
 
 [data-md-color-scheme="slate"] .course-home .grid.cards > ul > li {
@@ -153,6 +168,29 @@
 .course-home .grid.cards > ul > li h3 {
   margin-top: 0.1rem;
   font-size: 1.25rem;
+}
+
+.course-home-attribution {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.5rem;
+  color: var(--md-default-fg-color--light);
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.course-home-attribution p {
+  margin: 0;
+}
+
+.course-home-attribution a {
+  color: inherit;
+  text-decoration-color: color-mix(in srgb, currentColor 48%, transparent);
+  text-underline-offset: 0.18em;
 }
 
 .md-typeset a.md-button:not(.md-button--primary):not(.course-home .grid.cards .md-button) {
@@ -198,6 +236,12 @@
     border-color: var(--course-button-color);
     background: color-mix(in srgb, var(--course-button-color) 12%, transparent);
     color: var(--course-button-color);
+  }
+}
+
+@media (min-width: 1200px) {
+  .course-home > h1 {
+    white-space: nowrap;
   }
 }
 
@@ -388,9 +432,17 @@
 
   .course-home > h1 {
     font-size: 2rem;
+    line-height: 1.2;
+    white-space: normal;
   }
 
   .course-home .grid.cards {
     grid-template-columns: 1fr;
+  }
+
+  .course-home-attribution {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
   }
 }

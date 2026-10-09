@@ -1,6 +1,12 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 <div class="course-home" markdown>
 
-# Disruptive Architectures: IA e IoT
+# Disruptive Architectures: <span class="course-home-title-accent">IA e IoT</span>
 
 Explore os laboratórios e materiais do curso por trilha.
 
@@ -19,10 +25,16 @@ Explore os laboratórios e materiais do curso por trilha.
     [Explorar a trilha IA](aulas/IA/intro/index.md){ .md-button }
 
 </div>
+
+<div class="course-home-attribution" markdown>
+
+Tecnologia em Desenvolvimento de Sistemas · 2026 · Prof. Arnaldo Viana
+
+[Repositório do fork](https://github.com/KelsonZh0/DisruptiveArchitectures/)
+
 </div>
 
-**Tecnologia em Desenvolvimento de Sistemas · 2026 · Prof. Arnaldo Viana**
-[Repositório do fork](https://github.com/KelsonZh0/DisruptiveArchitectures/)
+</div>
 
 ---
 

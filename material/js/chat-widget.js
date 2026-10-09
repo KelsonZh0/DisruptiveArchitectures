@@ -149,12 +149,12 @@
       style.id = "da-rag-style";
       style.textContent = `
         #da-rag-bubble {
-          position: fixed; bottom: 20px; right: 20px; z-index: 9999;
-          box-sizing: border-box; width: 224px; min-width: 48px; height: 52px;
-          padding: 0 16px; border: none; border-radius: 999px;
+          position: fixed; bottom: 72px; right: 20px; z-index: 9999;
+          box-sizing: border-box; width: 200px; min-width: 48px; height: 48px;
+          padding: 0 12px; border: none; border-radius: 999px;
           background: var(--da-rag-trigger-bg, var(--md-primary-fg-color, #3349B4));
           color: var(--da-rag-trigger-fg, var(--md-primary-bg-color, #fff));
-          cursor: pointer; box-shadow: 0 3px 12px rgba(20, 24, 48, .24);
+          cursor: pointer; box-shadow: 0 2px 8px rgba(20, 24, 48, .18);
           display: flex; align-items: center; justify-content: center; gap: 9px;
           --da-rag-drag-x: 0px; --da-rag-drag-y: 0px;
           transform: translate3d(var(--da-rag-drag-x), var(--da-rag-drag-y), 0);
@@ -167,9 +167,9 @@
         #da-rag-bubble:active:not(.is-dragging) { transform: translate3d(var(--da-rag-drag-x), var(--da-rag-drag-y), 0) scale(.97); }
         #da-rag-bubble.is-dragging { cursor: grabbing; transition: none; }
         #da-rag-bubble.is-snapping { transition: transform 220ms cubic-bezier(.23, 1, .32, 1); }
-        #da-rag-bubble.is-compact { width: 52px; padding-right: 0; padding-left: 0; }
+        #da-rag-bubble.is-compact { width: 48px; padding-right: 0; padding-left: 0; }
         #da-rag-bubble .da-rag-trigger-icon {
-          position: absolute; left: 16px; top: 50%; margin-top: -12px;
+          position: absolute; left: 12px; top: 50%; margin-top: -12px;
           display: block; width: 24px; height: 24px;
           transition: left 180ms cubic-bezier(.23, 1, .32, 1), opacity 150ms ease-out, transform 180ms cubic-bezier(.23, 1, .32, 1);
         }
@@ -179,11 +179,11 @@
         #da-rag-bubble.is-open .da-rag-trigger-chat { opacity: 0; transform: rotate(45deg) scale(.82); }
         #da-rag-bubble.is-open .da-rag-trigger-close { opacity: 1; transform: rotate(0) scale(1); }
         #da-rag-bubble .da-rag-trigger-label {
-          display: inline-block; margin-left: 32px; overflow: hidden; white-space: nowrap;
-          font: 600 13px/1 "Segoe UI", Arial, sans-serif;
+          display: inline-block; margin-left: 27px; overflow: hidden; white-space: nowrap;
+          font: 600 12px/1 "Segoe UI", Arial, sans-serif;
           opacity: 1; transform: translateX(0);
           transition: opacity 120ms ease, transform 180ms cubic-bezier(.23, 1, .32, 1), max-width 180ms ease;
-          max-width: 160px;
+          max-width: 150px;
         }
         #da-rag-bubble.is-compact .da-rag-trigger-label { max-width: 0; opacity: 0; transform: translateX(5px); }
         #da-rag-bubble:focus-visible, #da-rag-close:focus-visible,
