@@ -16,32 +16,24 @@ extra:
 theme:
   name: material
   palette:
-    # Palette toggle for system
-    - media: "(prefers-color-scheme)"
-      toggle:
-        icon: material/brightness-auto
-        name: Switch to light mode
-
-    # Palette toggle for light mode
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: deep purple
-      accent: deep purple
+    # Claro
+    - scheme: default
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
         name: Switch to dark mode
 
-    # Palette toggle for dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: deep purple
-      accent: deep purple
+    # Escuro
+    - scheme: slate
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to light mode
   font:
-    text: Roboto
-    code: Roboto Mono
+    text: Source Serif 4
+    code: IBM Plex Mono
   features:
     - announce.dismiss
     - navigation.tabs
@@ -55,7 +47,6 @@ theme:
     - search.highlight
     - search.suggest
     - content.code.copy
-    - content.tabs.link
     - content.code.annotations
 
 # Extensions / plugins

@@ -1,5 +1,198 @@
 /* Responsive refinements for the Material for MkDocs layout. */
 
+/* Atlas de sistemas: indigo structure, coral actions, composed per color scheme. */
+[data-md-color-scheme="default"] {
+  color-scheme: light;
+  --md-primary-fg-color: #3730a3;
+  --md-primary-fg-color--light: #4f46e5;
+  --md-primary-fg-color--dark: #312e81;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: #ffffffb3;
+  --md-accent-fg-color: #b9382b;
+  --md-accent-fg-color--transparent: #b9382b1a;
+  --md-accent-bg-color: #ffffff;
+  --md-default-bg-color: #faf9fd;
+  --md-default-bg-color--light: #ffffffb3;
+  --md-default-bg-color--lighter: #ffffff4d;
+  --md-default-bg-color--dark: #efedf6;
+  --md-default-fg-color: #242238;
+  --md-default-fg-color--light: #504d63;
+  --md-default-fg-color--lighter: #716d83;
+  --md-default-fg-color--lightest: #918da1;
+  --md-code-bg-color: #f0eff7;
+  --md-code-fg-color: #29264a;
+  --md-typeset-a-color: #4338a8;
+  --md-footer-bg-color: #242044;
+  --md-footer-bg-color--dark: #1b1932;
+  --course-iot-band: #4338a8;
+  --course-ai-band: #e76e5d;
+}
+
+[data-md-color-scheme="slate"] {
+  color-scheme: dark;
+  --md-primary-fg-color: #232b3e;
+  --md-primary-fg-color--light: #34405a;
+  --md-primary-fg-color--dark: #1a2030;
+  --md-primary-bg-color: #e6ebf5;
+  --md-primary-bg-color--light: #e6ebf5b3;
+  --md-accent-fg-color: #ff9b7c;
+  --md-accent-fg-color--transparent: #ff9b7c1a;
+  --md-accent-bg-color: #1a2030;
+  --md-default-bg-color: #1a2030;
+  --md-default-bg-color--light: #232b3e;
+  --md-default-bg-color--lighter: #2b354a;
+  --md-default-bg-color--dark: #151b29;
+  --md-default-fg-color: #e6ebf5;
+  --md-default-fg-color--light: #b4bdd0;
+  --md-default-fg-color--lighter: #939fb8;
+  --md-default-fg-color--lightest: #7d8aa4;
+  --md-code-bg-color: #232b3e;
+  --md-code-fg-color: #e6ebf5;
+  --md-typeset-a-color: #a6b6ff;
+  --md-footer-bg-color: #232b3e;
+  --md-footer-bg-color--dark: #1a2030;
+  --course-iot-band: #a6b6ff;
+  --course-ai-band: #ff9b7c;
+  --course-card-border: #34405a;
+}
+
+/* Prose uses the requested reading face; interface and heading roles stay sans. */
+.md-content__inner.md-typeset {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 68ch !important;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 3vw, 1.5rem);
+  font-family: "Source Serif 4", Georgia, serif;
+  line-height: 1.72;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-header,
+.md-tabs,
+.md-sidebar,
+.md-nav,
+.md-search,
+.md-footer,
+.md-button,
+.md-typeset .admonition-title,
+.md-typeset summary {
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.md-typeset code,
+.md-typeset pre,
+.md-typeset kbd,
+.md-typeset samp {
+  font-family: "IBM Plex Mono", Consolas, monospace;
+}
+
+/* Let the home cards use the content grid; keep the remaining home prose readable. */
+.md-main .md-content .md-content__inner.md-typeset:has(.course-home) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none !important;
+  padding-inline: clamp(1rem, 3vw, 1.5rem);
+}
+
+.md-typeset:has(.course-home) > :not(.course-home) {
+  max-width: 68ch;
+  margin-inline: auto;
+}
+
+.course-home {
+  max-width: 68ch;
+  margin: 0 auto 2.5rem;
+}
+
+.course-home > h1 {
+  max-width: 24ch;
+  margin-bottom: 0.45rem;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+
+.course-home > p {
+  margin: 0 0 1.5rem;
+  color: var(--md-default-fg-color--light);
+  font-size: 1.15rem;
+}
+
+.course-home .grid.cards > ul > li {
+  position: relative;
+  overflow: hidden;
+  padding-top: 1.45rem;
+}
+
+.course-home .grid.cards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+[data-md-color-scheme="slate"] .course-home .grid.cards > ul > li {
+  border-color: var(--course-card-border);
+  background: var(--md-default-bg-color--light);
+}
+
+.course-home .grid.cards > ul > li::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 0.3rem;
+  background: var(--course-iot-band);
+  content: "";
+}
+
+.course-home .grid.cards > ul > li:nth-child(2)::before {
+  background: var(--course-ai-band);
+}
+
+.course-home .grid.cards > ul > li h3 {
+  margin-top: 0.1rem;
+  font-size: 1.25rem;
+}
+
+.md-typeset a.md-button:not(.md-button--primary) {
+  border-color: var(--md-accent-fg-color);
+  color: var(--md-accent-fg-color);
+}
+
+.md-typeset a.md-button:not(.md-button--primary):hover,
+.md-typeset a.md-button:not(.md-button--primary):focus-visible {
+  background: var(--md-accent-fg-color);
+  color: var(--md-accent-bg-color);
+}
+
+.course-home .grid.cards .md-button {
+  margin-top: 0.5rem;
+}
+
+[data-md-color-scheme="slate"] .course-home .grid.cards > ul > li:first-child .md-button {
+  border-color: #a6b6ff;
+  color: #a6b6ff;
+}
+
+[data-md-color-scheme="slate"] .course-home .grid.cards > ul > li:nth-child(2) .md-button {
+  border-color: #ff9b7c;
+  color: #ff9b7c;
+}
+
+[data-md-color-scheme="slate"] .course-home .grid.cards .md-button:hover,
+[data-md-color-scheme="slate"] .course-home .grid.cards .md-button:focus-visible {
+  background: var(--course-button-color);
+  color: #1a2030;
+}
+
+[data-md-color-scheme="slate"] .course-home .grid.cards > ul > li:first-child .md-button {
+  --course-button-color: #a6b6ff;
+}
+
+[data-md-color-scheme="slate"] .course-home .grid.cards > ul > li:nth-child(2) .md-button {
+  --course-button-color: #ff9b7c;
+}
+
 /* Give the desktop navigation enough room for course and lab names. */
 :root {
   --md-sidebar-width: 15.2rem;
@@ -120,5 +313,17 @@
   #da-rag-bubble {
     bottom: max(14px, env(safe-area-inset-bottom)) !important;
     right: 0 !important;
+  }
+
+  .course-home {
+    margin-bottom: 2rem;
+  }
+
+  .course-home > h1 {
+    font-size: 2rem;
+  }
+
+  .course-home .grid.cards {
+    grid-template-columns: 1fr;
   }
 }

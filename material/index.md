@@ -1,15 +1,28 @@
+<div class="course-home" markdown>
+
 # Disruptive Architectures: IA e IoT
 
+Explore os laboratórios e materiais do curso por trilha.
 
-Olá pessoal, bem-vindos!  
-Nesta página você encontrará os conteúdos da disciplina (atividades, laboratórios, materiais de apoio, dicas e referências) organizados para estudo e acompanhamento das aulas.
+<div class="grid cards" markdown>
 
-- **Curso:** Tecnologia em Desenvolvimento de Sistemas (TDS)  
-- **Disciplina:** Disruptive Architectures: IA e IoT  
-- **Turmas (2026):** 2TDSB e 2TDSPG  
-- **Repositório** com todos os arquivos está disponivel em: [https://github.com/arnaldojr/DisruptiveArchitectures/](https://github.com/arnaldojr/DisruptiveArchitectures/)
+-   ### Internet das Coisas (IoT)
 
-**Prof. Arnaldo Viana**
+    Sensores, dispositivos conectados, protocolos e automação em projetos práticos.
+
+    [Explorar a trilha IoT](aulas/iot/index.md){ .md-button }
+
+-   ### Inteligência Artificial (IA)
+
+    Aprendizado de máquina, deep learning e aplicações de IA generativa.
+
+    [Explorar a trilha IA](aulas/IA/intro/index.md){ .md-button }
+
+</div>
+</div>
+
+**Tecnologia em Desenvolvimento de Sistemas · 2026 · Prof. Arnaldo Viana**
+[Repositório da disciplina](https://github.com/arnaldojr/DisruptiveArchitectures/)
 
 ---
 
