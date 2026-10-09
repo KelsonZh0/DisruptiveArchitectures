@@ -10,17 +10,16 @@
  *      - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
  *      - js/chat-widget.js
  *
- * 3. Antes de carregar este arquivo, configure:
+ * 3. Antes de carregar este arquivo, configure em chat-config.js:
  *      window.DA_RAG_API_URL = "https://sua-api-publicada/ask";
- *    Sem configuração, o widget usa http://127.0.0.1:8000/ask para testes locais.
+ *    A URL pode ser absoluta ou uma rota relativa no mesmo domínio.
  *
- * O site usa navegação de página normal para que o widget seja inicializado
- * novamente em cada página do MkDocs. O estado da conversa fica nesta página
- * e reinicia quando o navegador carrega outra página.
+ * A conversa fica no sessionStorage e sobrevive à navegação entre páginas
+ * durante a sessão atual da aba.
  */
 
 (function () {
-  const API_URL = window.DA_RAG_API_URL || "http://127.0.0.1:8000/ask";
+  const STORAGE_KEY = "da-rag-chat-session-v1";
   const MAX_HISTORY_MESSAGES = 16; // 8 trocas: o mesmo limite configurado no backend
   const SITE_HOST = "kelsonzh0.github.io";
   const SITE_PATH = "/DisruptiveArchitectures/";
@@ -34,7 +33,89 @@
     enviando: false,
     conversaId: null,
     conversaToken: null,
+    perguntaPendente: null,
+    mensagemUsuarioPendente: null,
   };
+
+  function obterUrlApi() {
+    const configurada = typeof window.DA_RAG_API_URL === "string"
+      ? window.DA_RAG_API_URL.trim()
+      : "";
+    if (!configurada) {
+      throw new Error("A API do chat ainda não foi configurada. Defina a URL terminada em /ask no arquivo material/js/chat-config.js.");
+    }
+    let url;
+    try {
+      url = new URL(configurada, window.location.href);
+    } catch (_) {
+      throw new Error("A URL da API do chat é inválida. Use um endereço HTTP ou HTTPS terminado em /ask.");
+    }
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) {
+      throw new Error("A URL da API do chat precisa usar HTTP ou HTTPS e não pode conter credenciais.");
+    }
+    return url.href;
+  }
+
+  function salvarEstado() {
+    try {
+      const mensagens = estado.mensagens.filter((m) => !m.loading).slice(-80).map((m) => ({
+        id: m.id,
+        texto: String(m.texto).slice(0, 20000),
+        who: m.who,
+        fontes: validarFontes(m.fontes),
+        boasVindas: !!m.boasVindas,
+        retryQuestion: typeof m.retryQuestion === "string" ? m.retryQuestion.slice(0, 4000) : null,
+        retryUserMessageId: Number.isInteger(m.retryUserMessageId) ? m.retryUserMessageId : null,
+      }));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        aberto: estado.aberto,
+        mensagens,
+        conversaId: estado.conversaId,
+        conversaToken: estado.conversaToken,
+        perguntaPendente: estado.perguntaPendente,
+        mensagemUsuarioPendente: estado.mensagemUsuarioPendente,
+      }));
+    } catch (_) {
+      // O chat continua funcionando mesmo se o navegador bloquear o storage.
+    }
+  }
+
+  function obterSugestoesDaPagina() {
+    const conteudo = document.querySelector(".md-content");
+    const titulo = conteudo && conteudo.querySelector("h1")
+      ? conteudo.querySelector("h1").textContent.trim()
+      : document.title.replace(/\s+-\s+Disruptive Architectures$/, "").trim();
+    const topicos = conteudo
+      ? Array.from(conteudo.querySelectorAll("h2"))
+        .map((heading) => heading.textContent.trim())
+        .filter((heading) => !/objetivos|visão geral|entrega/i.test(heading))
+      : [];
+    const topico = topicos[0];
+    return [
+      `Quais são os objetivos de “${titulo.slice(0, 72)}”?`,
+      topico ? `Explique “${topico.slice(0, 72)}” com um exemplo.` : "Resuma as ideias principais desta página.",
+      "Que atividades ou entregas este material descreve?",
+    ];
+  }
+
+  function mostrarSugestoes(container) {
+    if (!container || container.querySelector(".da-rag-suggestions")) return;
+    const jaPerguntou = estado.mensagens.some((m) => m.who === "user");
+    if (jaPerguntou) return;
+
+    const grupo = document.createElement("div");
+    grupo.className = "da-rag-suggestions";
+    grupo.setAttribute("role", "group");
+    grupo.setAttribute("aria-label", "Sugestões de perguntas sobre esta página");
+    obterSugestoesDaPagina().forEach((pergunta) => {
+      const botao = document.createElement("button");
+      botao.type = "button";
+      botao.className = "da-rag-suggestion";
+      botao.textContent = pergunta;
+      grupo.appendChild(botao);
+    });
+    container.appendChild(grupo);
+  }
 
   function montarWidget() {
     // Se já existe (ex: script rodou 2x na mesma página), não duplica
@@ -48,13 +129,14 @@
           position: fixed; bottom: 20px; right: 20px; z-index: 9999;
           width: 56px; height: 56px; border-radius: 50%;
           background: var(--md-primary-fg-color, #673ab7);
-          color: white; border: none; cursor: pointer;
+          color: var(--md-primary-bg-color, #fff); border: none; cursor: pointer;
           font-size: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
           display: flex; align-items: center; justify-content: center;
         }
         #da-rag-bubble:focus-visible, #da-rag-close:focus-visible,
         #da-rag-new:focus-visible,
-        #da-rag-send:focus-visible, #da-rag-input:focus-visible {
+        #da-rag-send:focus-visible, #da-rag-input:focus-visible,
+        .da-rag-suggestion:focus-visible {
           outline: 3px solid var(--md-accent-fg-color, #ff4081);
           outline-offset: 2px;
         }
@@ -65,21 +147,22 @@
           color: var(--md-default-fg-color, #000);
           border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);
           display: none; flex-direction: column; overflow: hidden;
-          font-family: var(--md-text-font, sans-serif);
+          font-family: var(--md-text-font-family, var(--md-text-font, sans-serif));
+          border: 1px solid var(--md-default-fg-color--lightest, rgba(127,127,127,.22));
         }
         #da-rag-widget.open { display: flex; }
         #da-rag-header {
-          background: var(--md-primary-fg-color, #673ab7); color: white;
+          background: var(--md-primary-fg-color, #3730a3); color: var(--md-primary-bg-color, #fff);
           padding: 10px 14px; font-weight: 600; font-size: 14px;
           display: flex; justify-content: space-between; align-items: center;
         }
         #da-rag-header-actions { display: flex; align-items: center; gap: 8px; }
         #da-rag-new {
-          border: 1px solid rgba(255,255,255,0.65); border-radius: 5px;
-          background: transparent; color: white; cursor: pointer;
+          border: 1px solid currentColor; border-radius: 5px;
+          background: transparent; color: inherit; cursor: pointer;
           padding: 4px 7px; font: inherit; font-size: 11px;
         }
-        #da-rag-close { background: none; border: none; color: white; cursor: pointer; font-size: 18px; }
+        #da-rag-close { background: none; border: none; color: inherit; cursor: pointer; font-size: 18px; }
         #da-rag-messages {
           flex: 1; overflow-y: auto; padding: 12px; font-size: 13.5px; line-height: 1.4;
         }
@@ -89,8 +172,24 @@
           display: inline-block; padding: 8px 12px; border-radius: 10px; max-width: 85%;
           text-align: left; white-space: pre-wrap;
         }
-        .da-rag-msg.user .bubble { background: var(--md-primary-fg-color, #673ab7); color: white; }
-        .da-rag-msg.bot .bubble { background: var(--md-code-bg-color, #f0f0f0); }
+        .da-rag-msg.user .bubble { background: var(--md-primary-fg-color, #3730a3); color: var(--md-primary-bg-color, #fff); }
+        .da-rag-msg.bot .bubble {
+          background: var(--md-default-bg-color--light, var(--md-code-bg-color, #f0f0f0));
+          border: 1px solid var(--md-default-fg-color--lightest, transparent);
+        }
+        .da-rag-msg.error .bubble { border-color: var(--md-accent-fg-color, #b9382b); }
+        .da-rag-retry {
+          display: inline-flex; margin: 8px 0 0; padding: 5px 9px; border-radius: 6px;
+          border: 1px solid var(--md-accent-fg-color, #b9382b);
+          background: transparent; color: var(--md-accent-fg-color, #b9382b);
+          font: inherit; font-size: 12px; cursor: pointer;
+        }
+        .da-rag-retry:hover:not(:disabled) {
+          background: var(--md-accent-fg-color, #b9382b);
+          color: var(--md-accent-bg-color, #fff);
+        }
+        .da-rag-retry:focus-visible { outline: 3px solid var(--md-accent-fg-color, #b9382b); outline-offset: 2px; }
+        .da-rag-retry:disabled { cursor: wait; opacity: .55; }
         .da-rag-msg .bubble p { margin: 0 0 6px 0; }
         .da-rag-msg .bubble p:last-child { margin-bottom: 0; }
         .da-rag-msg .bubble ul { margin: 4px 0; padding-left: 18px; }
@@ -105,20 +204,55 @@
         .da-rag-msg .bubble pre code {
           background: none; padding: 0; font-size: 12px; white-space: pre;
         }
+        .da-rag-suggestions {
+          display: grid; gap: 6px; margin: 2px 0 12px;
+        }
+        .da-rag-suggestion {
+          width: 100%; padding: 8px 10px; border-radius: 8px; text-align: left;
+          border: 1px solid var(--md-default-fg-color--lightest, rgba(127,127,127,.22));
+          background: var(--md-default-bg-color--light, var(--md-code-bg-color, #f0f0f0));
+          color: inherit; font: inherit; font-size: 12px; line-height: 1.35; cursor: pointer;
+        }
+        .da-rag-suggestion:hover {
+          border-color: var(--md-accent-fg-color, #b9382b);
+          background: var(--md-accent-bg-color, var(--md-default-bg-color));
+        }
+        .da-rag-suggestion:active { transform: translateY(1px); }
+        .da-rag-typing { display: inline-flex; align-items: center; gap: 4px; }
+        .da-rag-typing-label { margin-right: 2px; }
+        .da-rag-typing-dot {
+          width: 5px; height: 5px; border-radius: 50%;
+          background: var(--md-accent-fg-color, currentColor);
+          animation: da-rag-typing 1.2s ease-in-out infinite;
+        }
+        .da-rag-typing-dot:nth-child(3) { animation-delay: 120ms; }
+        .da-rag-typing-dot:nth-child(4) { animation-delay: 240ms; }
+        @keyframes da-rag-typing {
+          0%, 60%, 100% { opacity: .35; transform: translateY(0); }
+          30% { opacity: 1; transform: translateY(-3px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .da-rag-typing-dot { animation: none; opacity: .75; }
+          .da-rag-suggestion:active { transform: none; }
+        }
         .da-rag-sources { margin-top: 6px; font-size: 11.5px; opacity: 0.75; }
         .da-rag-sources a { color: inherit; }
-        #da-rag-input-row { display: flex; border-top: 1px solid rgba(0,0,0,0.1); }
+        #da-rag-input-row { display: flex; border-top: 1px solid var(--md-default-fg-color--lightest, rgba(0,0,0,0.1)); }
         #da-rag-input {
           flex: 1; border: none; padding: 10px; font-size: 13.5px; outline: none;
           background: transparent; color: inherit;
         }
-        #da-rag-send { border: none; background: none; cursor: pointer; padding: 0 14px; font-size: 16px; }
+        #da-rag-send { border: none; background: none; color: var(--md-accent-fg-color, currentColor); cursor: pointer; padding: 0 14px; font-size: 16px; }
         #da-rag-send:disabled { cursor: wait; opacity: 0.45; }
         .da-rag-loading { opacity: 0.6; font-style: italic; }
         @media (max-width: 480px) {
           #da-rag-bubble { bottom: 14px; right: 14px; }
           #da-rag-widget {
-            bottom: 0; right: 0; width: 100vw; max-width: 100vw;
+            box-sizing: border-box;
+            left: env(safe-area-inset-left, 0px);
+            right: env(safe-area-inset-right, 0px);
+            bottom: env(safe-area-inset-bottom, 0px);
+            width: auto; max-width: none;
             height: min(560px, 86vh); max-height: 86vh; border-radius: 12px 12px 0 0;
           }
         }
@@ -137,6 +271,7 @@
     const widget = document.createElement("div");
     widget.id = "da-rag-widget";
     widget.setAttribute("role", "dialog");
+    widget.setAttribute("aria-modal", "true");
     widget.setAttribute("aria-labelledby", "da-rag-title");
     widget.innerHTML = `
       <div id="da-rag-header">
@@ -166,13 +301,58 @@
     if (estado.aberto) {
       widget.classList.add("open");
       bubble.setAttribute("aria-expanded", "true");
+      if (estado.mensagens.length === 0) {
+        addMessage(MENSAGEM_BOAS_VINDAS, "bot", null, false, true);
+      }
+      inputEl.focus();
+    }
+    mostrarSugestoes(messagesEl);
+
+    function fecharWidget() {
+      widget.classList.remove("open");
+      estado.aberto = false;
+      salvarEstado();
+      bubble.setAttribute("aria-expanded", "false");
+      bubble.focus();
     }
 
-    async function enviarPergunta() {
-      const pergunta = inputEl.value.trim();
+    widget.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        fecharWidget();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const focaveis = Array.from(widget.querySelectorAll(
+        'button:not(:disabled), input:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])'
+      )).filter((el) => el.getClientRects().length > 0);
+      if (focaveis.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const primeiro = focaveis[0];
+      const ultimo = focaveis[focaveis.length - 1];
+      if (event.shiftKey && (document.activeElement === primeiro || !widget.contains(document.activeElement))) {
+        event.preventDefault();
+        ultimo.focus();
+      } else if (!event.shiftKey && (document.activeElement === ultimo || !widget.contains(document.activeElement))) {
+        event.preventDefault();
+        primeiro.focus();
+      }
+    });
+
+    async function enviarPergunta(perguntaInformada, retryOf) {
+      const pergunta = typeof perguntaInformada === "string" ? perguntaInformada.trim() : inputEl.value.trim();
       if (!pergunta || estado.enviando) return;
-      const historico = estado.mensagens
+      if (retryOf) {
+        removeMessage(retryOf.errorMessageId);
+        removeMessage(retryOf.userMessageId);
+      }
+      const mensagensParaHistorico = estado.mensagens
         .filter((m) => !m.loading && !m.boasVindas && (m.who === "user" || m.who === "bot"))
+        .filter((m) => !(retryOf && m.id === retryOf.userMessageId));
+      const historico = mensagensParaHistorico
         .slice(-MAX_HISTORY_MESSAGES)
         .map((m) => ({
           papel: m.who === "bot" ? "assistant" : "user",
@@ -183,23 +363,45 @@
       sendButton.disabled = true;
       messagesEl.setAttribute("aria-busy", "true");
       inputEl.value = "";
-      addMessage(pergunta, "user");
+      const userMessageId = addMessage(pergunta, "user");
+      estado.perguntaPendente = pergunta;
+      estado.mensagemUsuarioPendente = userMessageId;
 
-      const loadingId = addMessage("Consultando o material...", "bot", null, true);
+      messagesEl.querySelector(".da-rag-suggestions")?.remove();
+      const loadingId = addMessage("Digitando", "bot", null, true);
+      salvarEstado();
 
       try {
+        const apiUrl = obterUrlApi();
         const body = { pergunta, historico };
         if (estado.conversaId && estado.conversaToken) {
           body.conversa_id = estado.conversaId;
           body.conversa_token = estado.conversaToken;
         }
-        const resp = await fetch(API_URL, {
+        const resp = await fetch(apiUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
+        if (!resp.ok) {
+          let detalhe = "";
+          try {
+            const erroApi = await resp.json();
+            detalhe = typeof erroApi.detail === "string" ? erroApi.detail : typeof erroApi.erro === "string" ? erroApi.erro : "";
+          } catch (_) { /* resposta pode não ser JSON */ }
+          const descricoes = {
+            401: "A API recusou a autenticação (HTTP 401). Confira as credenciais e permissões do servidor.",
+            403: "A API negou o acesso (HTTP 403). Confira as permissões e a configuração de acesso.",
+            404: "A rota da API não foi encontrada (HTTP 404). Confira se a URL configurada termina na rota /ask.",
+          };
+          throw new Error(descricoes[resp.status] || `A API respondeu com HTTP ${resp.status}.${detalhe ? ` Detalhe: ${detalhe}` : ""}`);
+        }
+        let data;
+        try {
+          data = await resp.json();
+        } catch (_) {
+          throw new Error("A API respondeu, mas enviou um conteúdo que não está em JSON válido.");
+        }
 
         removeMessage(loadingId);
         if (typeof data.conversa_id === "string" && typeof data.conversa_token === "string") {
@@ -208,17 +410,31 @@
         }
 
         if (data.erro) {
-          addMessage("Ops, deu um erro: " + data.erro, "bot");
+          throw new Error(`A API não conseguiu responder: ${data.erro}`);
         } else if (data.detail) {
-          addMessage("Ops, deu um erro: " + data.detail, "bot");
+          throw new Error(`A API não conseguiu responder: ${data.detail}`);
         } else if (typeof data.resposta !== "string") {
-          addMessage("O assistente retornou uma resposta inválida. Tente novamente.", "bot");
+          throw new Error("A API retornou uma resposta sem o campo de texto esperado.");
         } else {
+          estado.perguntaPendente = null;
+          estado.mensagemUsuarioPendente = null;
+          if (typeof data.conversa_id === "string" && typeof data.conversa_token === "string") {
+            estado.conversaId = data.conversa_id;
+            estado.conversaToken = data.conversa_token;
+          }
           addMessage(data.resposta, "bot", validarFontes(data.fontes));
         }
       } catch (e) {
         removeMessage(loadingId);
-        addMessage("Não consegui falar com o assistente agora. Tente novamente.", "bot");
+        estado.perguntaPendente = null;
+        estado.mensagemUsuarioPendente = null;
+        const explicacao = e instanceof TypeError
+          ? "Não foi possível conectar à API do chat. Verifique se o endereço está correto, se o servidor está online e se o CORS permite este site."
+          : (e && e.message) || "Ocorreu um erro inesperado ao consultar a API.";
+        addMessage(explicacao, "bot", null, false, false, {
+          retryQuestion: pergunta,
+          retryUserMessageId: userMessageId,
+        });
       } finally {
         estado.enviando = false;
         // Estes elementos podem já não ser os "atuais" se o widget foi
@@ -229,37 +445,60 @@
         inputEl.disabled = false;
         sendButton.disabled = false;
         messagesEl.setAttribute("aria-busy", "false");
+        document.querySelectorAll(".da-rag-retry").forEach((button) => { button.disabled = false; });
+        salvarEstado();
         const inputAtual = document.getElementById("da-rag-input");
-        if (inputAtual) inputAtual.focus();
+        if (estado.aberto && inputAtual) inputAtual.focus();
       }
     }
 
     bubble.addEventListener("click", () => {
-      widget.classList.toggle("open");
-      estado.aberto = widget.classList.contains("open");
-      bubble.setAttribute("aria-expanded", String(estado.aberto));
-      if (estado.aberto) inputEl.focus();
-      if (estado.aberto && estado.mensagens.length === 0) {
+      if (estado.aberto) {
+        fecharWidget();
+        return;
+      }
+      widget.classList.add("open");
+      estado.aberto = true;
+      salvarEstado();
+      bubble.setAttribute("aria-expanded", "true");
+      if (estado.mensagens.length === 0) {
         addMessage(MENSAGEM_BOAS_VINDAS, "bot", null, false, true);
       }
+      mostrarSugestoes(messagesEl);
+      inputEl.focus();
     });
     widget.querySelector("#da-rag-new").addEventListener("click", () => {
       if (estado.enviando) return;
       estado.mensagens = [];
       estado.conversaId = null;
       estado.conversaToken = null;
+      estado.perguntaPendente = null;
+      estado.mensagemUsuarioPendente = null;
       const mensagensAtual = document.getElementById("da-rag-messages");
       if (mensagensAtual) mensagensAtual.replaceChildren();
       addMessage(MENSAGEM_BOAS_VINDAS, "bot", null, false, true);
+      mostrarSugestoes(mensagensAtual);
+      salvarEstado();
       inputEl.focus();
     });
-    widget.querySelector("#da-rag-close").addEventListener("click", () => {
-      widget.classList.remove("open");
-      estado.aberto = false;
-      bubble.setAttribute("aria-expanded", "false");
-      bubble.focus();
-    });
+    widget.querySelector("#da-rag-close").addEventListener("click", fecharWidget);
     sendButton.addEventListener("click", enviarPergunta);
+    messagesEl.addEventListener("click", (event) => {
+      const suggestion = event.target.closest(".da-rag-suggestion");
+      if (suggestion && !estado.enviando) {
+        enviarPergunta(suggestion.textContent);
+        return;
+      }
+      const retryButton = event.target.closest(".da-rag-retry");
+      if (!retryButton || estado.enviando) return;
+      const erro = estado.mensagens.find((m) => String(m.id) === retryButton.dataset.retryMessageId);
+      if (!erro || !erro.retryQuestion) return;
+      retryButton.disabled = true;
+      enviarPergunta(erro.retryQuestion, {
+        errorMessageId: erro.id,
+        userMessageId: erro.retryUserMessageId,
+      });
+    });
     inputEl.addEventListener("keydown", (e) => {
       if (e.key === "Enter") enviarPergunta();
     });
@@ -273,6 +512,64 @@
   // Por isso addMessage/renderizarMensagem sempre buscam o container ATUAL
   // via document.getElementById, nunca uma referência guardada de antes.
   let proximoId = 1;
+
+  function restaurarEstado() {
+    try {
+      const salvo = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
+      if (!salvo || typeof salvo !== "object") return;
+      estado.aberto = !!salvo.aberto;
+      estado.mensagens = Array.isArray(salvo.mensagens)
+        ? salvo.mensagens.filter((m) => m && Number.isInteger(m.id) && typeof m.texto === "string" && ["user", "bot"].includes(m.who))
+          .slice(-80).map((m) => ({
+            id: m.id,
+            texto: m.texto.slice(0, 20000),
+            who: m.who,
+            fontes: validarFontes(m.fontes),
+            loading: false,
+            boasVindas: !!m.boasVindas,
+            retryQuestion: typeof m.retryQuestion === "string" ? m.retryQuestion.slice(0, 4000) : null,
+            retryUserMessageId: Number.isInteger(m.retryUserMessageId) ? m.retryUserMessageId : null,
+          }))
+        : [];
+      estado.conversaId = typeof salvo.conversaId === "string" ? salvo.conversaId : null;
+      estado.conversaToken = typeof salvo.conversaToken === "string" ? salvo.conversaToken : null;
+      estado.perguntaPendente = typeof salvo.perguntaPendente === "string" ? salvo.perguntaPendente.slice(0, 4000) : null;
+      estado.mensagemUsuarioPendente = Number.isInteger(salvo.mensagemUsuarioPendente) ? salvo.mensagemUsuarioPendente : null;
+      proximoId = estado.mensagens.reduce((maior, m) => Math.max(maior, m.id), 0) + 1;
+
+      if (estado.perguntaPendente) {
+        const pergunta = estado.perguntaPendente;
+        const userMessageId = estado.mensagemUsuarioPendente;
+        estado.perguntaPendente = null;
+        estado.mensagemUsuarioPendente = null;
+      if (!estado.mensagens.some((m) => m.id === userMessageId) && userMessageId !== null) {
+        estado.mensagens.push({
+          id: userMessageId,
+          texto: pergunta,
+          who: "user",
+          fontes: [],
+          loading: false,
+          boasVindas: false,
+          retryQuestion: null,
+          retryUserMessageId: null,
+        });
+      }
+        estado.mensagens.push({
+          id: proximoId++,
+          texto: "A pergunta foi interrompida ao trocar de página ou recarregar. Tente novamente quando quiser.",
+          who: "bot",
+          fontes: [],
+          loading: false,
+          boasVindas: false,
+          retryQuestion: pergunta,
+          retryUserMessageId: userMessageId,
+        });
+      }
+      salvarEstado();
+    } catch (_) {
+      // Storage indisponível ou dados antigos/inválidos: inicia conversa vazia.
+    }
+  }
 
   // Conversor leve de markdown -> HTML (escapa HTML primeiro, por segurança,
   // e só então aplica as transformações de markdown mais comuns).
@@ -355,11 +652,28 @@
   function renderizarMensagem(container, m) {
     const wrap = document.createElement("div");
     wrap.className = `da-rag-msg ${m.who}`;
+    if (m.retryQuestion) wrap.classList.add("error");
     wrap.dataset.msgId = m.id;
     const bubbleEl = document.createElement("div");
     bubbleEl.className = "bubble";
-    if (m.loading) bubbleEl.classList.add("da-rag-loading");
-    if (m.who === "bot") {
+    if (m.loading) {
+      bubbleEl.classList.add("da-rag-loading");
+      bubbleEl.setAttribute("role", "status");
+      bubbleEl.setAttribute("aria-label", "Assistente digitando");
+      const typing = document.createElement("span");
+      typing.className = "da-rag-typing";
+      const label = document.createElement("span");
+      label.className = "da-rag-typing-label";
+      label.textContent = "Digitando";
+      typing.appendChild(label);
+      for (let index = 0; index < 3; index += 1) {
+        const dot = document.createElement("span");
+        dot.className = "da-rag-typing-dot";
+        dot.setAttribute("aria-hidden", "true");
+        typing.appendChild(dot);
+      }
+      bubbleEl.appendChild(typing);
+    } else if (m.who === "bot") {
       // innerHTML aqui é seguro: markdownParaHtml escapa < > & antes de
       // aplicar as tags, então não dá pra injetar HTML arbitrário.
       bubbleEl.innerHTML = markdownParaHtml(m.texto);
@@ -367,6 +681,15 @@
       bubbleEl.textContent = m.texto;
     }
     wrap.appendChild(bubbleEl);
+
+    if (m.retryQuestion) {
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.className = "da-rag-retry";
+      retry.dataset.retryMessageId = String(m.id);
+      retry.textContent = "Tentar novamente";
+      wrap.appendChild(retry);
+    }
 
     if (m.fontes && m.fontes.length) {
       const src = document.createElement("div");
@@ -390,27 +713,35 @@
   }
 
   /** Adiciona mensagem ao estado E ao container atual do DOM (se existir). */
-  function addMessage(texto, who, fontes, loading, boasVindas) {
+  function addMessage(texto, who, fontes, loading, boasVindas, metadados) {
     const id = proximoId++;
-    const m = { id, texto, who, fontes, loading: !!loading, boasVindas: !!boasVindas };
+    const m = {
+      id, texto, who, fontes: validarFontes(fontes), loading: !!loading, boasVindas: !!boasVindas,
+      retryQuestion: metadados && metadados.retryQuestion,
+      retryUserMessageId: metadados && metadados.retryUserMessageId,
+    };
     estado.mensagens.push(m);
 
     const container = document.getElementById("da-rag-messages");
     if (container) renderizarMensagem(container, m);
+    salvarEstado();
 
     return id;
   }
 
   /** Remove mensagem do estado E do DOM atual (se ainda estiver lá). */
   function removeMessage(id) {
+    if (!Number.isInteger(id)) return;
     estado.mensagens = estado.mensagens.filter((m) => m.id !== id);
     const el = document.querySelector(`[data-msg-id="${id}"]`);
     if (el) el.remove();
+    salvarEstado();
   }
 
   // O site usa navegação de página normal (sem navigation.instant), então
   // este script é executado novamente a cada página. Inicializamos após o
   // DOM ficar pronto para garantir que document.body já exista.
+  restaurarEstado();
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", montarWidget, { once: true });
   } else {

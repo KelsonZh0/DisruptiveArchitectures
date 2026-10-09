@@ -4,6 +4,16 @@ Nos laboratórios anteriores, você definiu o comportamento de um assistente e o
 
 Ao final, você terá um assistente capaz de identificar uma solicitação de suporte, abrir um chamado fictício e consultar seu status.
 
+!!! abstract "Visão geral do laboratório"
+
+    **Objetivos**
+
+    - Gerar uma resposta que obedece a um schema JSON e validá-la com Pydantic.
+    - Declarar funções para o LLM, executar uma função escolhida e devolver o resultado ao modelo.
+    - Limitar as ações que o assistente pode realizar.
+
+    **Entregável** · Saída estruturada validada, pelo menos duas ferramentas, evidências dos testes obrigatórios, explicação dos limites de ação e implementação de uma opção do desafio final.
+
 [**Abrir no Google Colab**](https://colab.research.google.com/github/arnaldojr/DisruptiveArchitectures/blob/master/material/aulas/genAI/lab3/lab3_ferramentas_colab.ipynb){ .md-button .md-button--primary }
 
 [Baixar notebook](lab3_ferramentas_colab.ipynb){ .md-button download="lab3_ferramentas_colab.ipynb" }

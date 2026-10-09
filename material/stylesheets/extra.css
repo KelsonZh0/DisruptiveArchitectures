@@ -218,10 +218,22 @@
   min-width: 0;
 }
 
-.md-nav__link .md-ellipsis {
+.md-sidebar--primary .md-nav__link {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.md-sidebar--primary .md-nav__link .md-ellipsis {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
 }
 
 @media screen and (max-width: 76.2344em) {
@@ -252,7 +264,7 @@
   }
 
   .md-sidebar--primary .md-nav__link .md-ellipsis {
-    font-size: 0.68rem;
+    font-size: 0.78rem;
   }
 
   /* Allow the active title to wrap instead of clipping it in the header. */
@@ -267,6 +279,10 @@
   }
 
   .md-header__title {
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: calc(100vw - 6.5rem);
     height: auto;
     min-height: 3.75rem;
     line-height: 1.15;
@@ -276,24 +292,32 @@
 
   .md-header__topic {
     align-items: center;
+    flex: 1 1 auto;
     height: auto;
-    max-width: 100%;
+    min-width: 0;
+    max-width: 100% !important;
     min-height: 3.75rem;
     white-space: normal;
   }
 
   .md-header__topic .md-ellipsis {
     display: block;
+    max-width: 100%;
     overflow: visible;
     text-overflow: clip;
     white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
     font-size: 0.85rem;
     line-height: 1.15;
   }
 
   /* Keep every breadcrumb visible without a horizontal scroll strip. */
   .md-path {
+    box-sizing: border-box;
     height: auto;
+    max-width: 100%;
+    min-width: 0;
     overflow: visible;
   }
 
@@ -301,18 +325,40 @@
     align-items: flex-start;
     flex-wrap: wrap;
     gap: 0.2rem 0.4rem;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .md-path__item {
+    flex: 0 1 auto;
     min-width: 0;
+    max-width: 100%;
     white-space: normal;
     overflow-wrap: anywhere;
   }
 
-  /* Move the floating chat control out of the notebook button's hit area. */
+  .md-path__link {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Keep the floating assistant inside the safe area and below download actions. */
   #da-rag-bubble {
     bottom: max(14px, env(safe-area-inset-bottom)) !important;
-    right: 0 !important;
+    right: max(14px, env(safe-area-inset-right)) !important;
+  }
+
+  .md-content__inner.md-typeset {
+    padding-bottom: max(5rem, calc(4rem + env(safe-area-inset-bottom)));
+  }
+
+  .md-typeset a[download].md-button {
+    display: table;
+    box-sizing: border-box;
+    max-width: calc(100% - 3.5rem);
+    margin-inline-start: 0 !important;
+    white-space: normal;
   }
 
   .course-home {

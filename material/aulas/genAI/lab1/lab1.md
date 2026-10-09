@@ -3,6 +3,16 @@
 
 Neste laboratório, você vai aprender a sair do básico "me conte uma piada" para a construção de **prompts estruturados** que servem como o motor de inteligência de uma aplicação real.
 
+!!! abstract "Visão geral do laboratório"
+
+    **Objetivos**
+
+    - Conhecer a interface do Google AI Studio.
+    - Aplicar técnicas de engenharia de prompts: persona, contexto, zero-shot e few-shot.
+    - Criar, testar e refinar o System Prompt de uma aplicação.
+
+    **Entregável** · System Prompt final, demonstração com input válido, edge case e input inválido/adversarial, e explicação do que mudou e por que melhorou.
+
 ## Objetivo do Laboratório
 
 1. Conhecer a interface do Google AI Studio.

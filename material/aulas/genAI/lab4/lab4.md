@@ -8,6 +8,16 @@ Você construirá um mecanismo de **Retrieval-Augmented Generation (RAG)** usand
 
 [Baixar notebook](lab4_rag_colab.ipynb){ .md-button download="lab4_rag_colab.ipynb" }
 
+!!! abstract "Visão geral do laboratório"
+
+    **Objetivos**
+
+    - Distinguir memória de conversa de base de conhecimento.
+    - Representar textos com embeddings e recuperar trechos relacionados.
+    - Gerar respostas fundamentadas com indicação de fontes.
+
+    **Entregável** · Mecanismo de RAG implementado no notebook, com busca semântica e respostas que indicam as fontes utilizadas.
+
 ---
 
 ## Objetivos do laboratório

@@ -2,6 +2,16 @@
 
 Antes de adicionar ferramentas ao assistente, vamos fortalecer algumas habilidades de programação que serão necessárias nos próximos laboratórios.
 
+!!! abstract "Visão geral do laboratório"
+
+    **Objetivos**
+
+    - Representar dados com dicionários, listas e classes.
+    - Criar funções e validar dados com Pydantic.
+    - Converter dados entre Python e JSON.
+
+    **Entregável** · Miniaplicação que valida uma solicitação estruturada, executa uma função conhecida e converte o resultado para JSON.
+
 [**Abrir no Google Colab**](https://colab.research.google.com/github/arnaldojr/DisruptiveArchitectures/blob/master/material/aulas/genAI/lab2_5/lab2_5_python_colab.ipynb){ .md-button .md-button--primary }
 
 [Baixar notebook](lab2_5_python_colab.ipynb){ .md-button download="lab2_5_python_colab.ipynb" }

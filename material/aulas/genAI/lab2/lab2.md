@@ -5,6 +5,16 @@ Em vez de usar uma interface pronta, você vai escrever um programa em Python qu
 
 Ao final, você terá um pequeno assistente conversacional funcionando no Google Colab.
 
+!!! abstract "Visão geral do laboratório"
+
+    **Objetivos**
+
+    - Enviar e receber mensagens pela Gemini API usando Python.
+    - Distinguir System Prompt e User Prompt.
+    - Entender como o histórico mantém a continuidade entre mensagens.
+
+    **Entregável** · Pequeno assistente conversacional funcionando no Google Colab.
+
 [**Abrir no Google Colab**](https://colab.research.google.com/github/arnaldojr/DisruptiveArchitectures/blob/master/material/aulas/genAI/lab2/lab2_gemini_api_colab.ipynb){ .md-button .md-button--primary }
 
 

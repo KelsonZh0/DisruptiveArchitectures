@@ -4,6 +4,15 @@ Até agora, seu assistente de IA funciona como um protótipo desenvolvido no Goo
 
 Use como base o projeto que você desenvolveu no laboratório anterior ou o projeto desenvolvido no CP.
 
+!!! abstract "Visão geral do laboratório"
+
+    **Objetivos**
+
+    - Transformar o protótipo do Colab em uma aplicação de IA estruturada para execução fora do notebook.
+    - Criar uma API e persistir dados relevantes em um banco de dados.
+
+    **Entregável** · Aplicação executada fora do Google Colab e acessível pela API criada, com apresentação da arquitetura, decisões técnicas e funcionamento.
+
 [**Abrir no Google Colab**](https://colab.research.google.com/github/arnaldojr/DisruptiveArchitectures/blob/master/material/aulas/genAI/lab3/lab3_ferramentas_colab.ipynb){ .md-button .md-button--primary }
 
 [Baixar notebook](../lab3/lab3_ferramentas_colab.ipynb){ .md-button download="lab3_ferramentas_colab.ipynb" }
