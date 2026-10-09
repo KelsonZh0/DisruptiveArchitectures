@@ -154,13 +154,13 @@
   font-size: 1.25rem;
 }
 
-.md-typeset a.md-button:not(.md-button--primary) {
+.md-typeset a.md-button:not(.md-button--primary):not(.course-home .grid.cards .md-button) {
   border-color: var(--md-accent-fg-color);
   color: var(--md-accent-fg-color);
 }
 
-.md-typeset a.md-button:not(.md-button--primary):hover,
-.md-typeset a.md-button:not(.md-button--primary):focus-visible {
+.md-typeset a.md-button:not(.md-button--primary):not(.course-home .grid.cards .md-button):hover,
+.md-typeset a.md-button:not(.md-button--primary):not(.course-home .grid.cards .md-button):focus-visible {
   background: var(--md-accent-fg-color);
   color: var(--md-accent-bg-color);
 }
