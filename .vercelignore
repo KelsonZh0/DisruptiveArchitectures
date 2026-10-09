@@ -1,0 +1,21 @@
+# The Vercel project hosts only the FastAPI application.
+.github
+.agents
+.aws
+.pytest_cache
+docs
+material
+scripts
+overrides
+frontend
+backend/tests
+backend/migrations
+backend/.deps*
+*.md
+*.ipynb
+*.pdf
+*.pptx
+*.mp4
+*.zip
+mkdocs.yml
+docs-requirements.txt
