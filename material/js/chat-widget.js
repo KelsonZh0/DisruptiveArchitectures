@@ -20,6 +20,7 @@
 
 (function () {
   const STORAGE_KEY = "da-rag-chat-session-v1";
+  const POSITION_KEY = "da-rag-widget-position-v1";
   const MAX_HISTORY_MESSAGES = 16; // 8 trocas: o mesmo limite configurado no backend
   const SITE_HOST = "kelsonzh0.github.io";
   const SITE_PATH = "/DisruptiveArchitectures/";
@@ -36,6 +37,28 @@
     perguntaPendente: null,
     mensagemUsuarioPendente: null,
   };
+  const posicoes = lerPosicoes();
+
+  function lerPosicoes() {
+    try {
+      const salvo = JSON.parse(localStorage.getItem(POSITION_KEY) || "null");
+      return salvo && typeof salvo === "object" ? salvo : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function salvarPosicoes() {
+    try {
+      localStorage.setItem(POSITION_KEY, JSON.stringify(posicoes));
+    } catch (_) {
+      // A posição customizada é opcional se o armazenamento estiver bloqueado.
+    }
+  }
+
+  function limitar(valor, minimo, maximo) {
+    return Math.min(Math.max(valor, minimo), Math.max(minimo, maximo));
+  }
 
   function obterUrlApi() {
     const configurada = typeof window.DA_RAG_API_URL === "string"
@@ -127,12 +150,42 @@
       style.textContent = `
         #da-rag-bubble {
           position: fixed; bottom: 20px; right: 20px; z-index: 9999;
-          width: 56px; height: 56px; border-radius: 50%;
-          background: var(--md-primary-fg-color, #673ab7);
-          color: var(--md-primary-bg-color, #fff); border: none; cursor: pointer;
-          font-size: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          display: flex; align-items: center; justify-content: center;
+          box-sizing: border-box; width: 224px; min-width: 48px; height: 52px;
+          padding: 0 16px; border: none; border-radius: 999px;
+          background: var(--da-rag-trigger-bg, var(--md-primary-fg-color, #3349B4));
+          color: var(--da-rag-trigger-fg, var(--md-primary-bg-color, #fff));
+          cursor: pointer; box-shadow: 0 3px 12px rgba(20, 24, 48, .24);
+          display: flex; align-items: center; justify-content: center; gap: 9px;
+          --da-rag-drag-x: 0px; --da-rag-drag-y: 0px;
+          transform: translate3d(var(--da-rag-drag-x), var(--da-rag-drag-y), 0);
+          transition: width 180ms cubic-bezier(.23, 1, .32, 1), padding 180ms cubic-bezier(.23, 1, .32, 1), box-shadow 180ms ease;
+          touch-action: none; user-select: none; -webkit-user-select: none;
         }
+        [data-md-color-scheme="default"] #da-rag-bubble { --da-rag-trigger-bg: #3349B4; --da-rag-trigger-fg: #fff; }
+        [data-md-color-scheme="slate"] #da-rag-bubble { --da-rag-trigger-bg: #A6B6FF; --da-rag-trigger-fg: #1A2030; }
+        #da-rag-bubble:hover { box-shadow: 0 5px 16px rgba(20, 24, 48, .3); }
+        #da-rag-bubble:active:not(.is-dragging) { transform: translate3d(var(--da-rag-drag-x), var(--da-rag-drag-y), 0) scale(.97); }
+        #da-rag-bubble.is-dragging { cursor: grabbing; transition: none; }
+        #da-rag-bubble.is-snapping { transition: transform 220ms cubic-bezier(.23, 1, .32, 1); }
+        #da-rag-bubble.is-compact { width: 52px; padding-right: 0; padding-left: 0; }
+        #da-rag-bubble .da-rag-trigger-icon {
+          position: absolute; left: 16px; top: 50%; margin-top: -12px;
+          display: block; width: 24px; height: 24px;
+          transition: left 180ms cubic-bezier(.23, 1, .32, 1), opacity 150ms ease-out, transform 180ms cubic-bezier(.23, 1, .32, 1);
+        }
+        #da-rag-bubble.is-compact .da-rag-trigger-icon { left: calc(50% - 12px); }
+        #da-rag-bubble .da-rag-trigger-chat { opacity: 1; transform: rotate(0) scale(1); }
+        #da-rag-bubble .da-rag-trigger-close { opacity: 0; transform: rotate(-45deg) scale(.82); }
+        #da-rag-bubble.is-open .da-rag-trigger-chat { opacity: 0; transform: rotate(45deg) scale(.82); }
+        #da-rag-bubble.is-open .da-rag-trigger-close { opacity: 1; transform: rotate(0) scale(1); }
+        #da-rag-bubble .da-rag-trigger-label {
+          display: inline-block; margin-left: 32px; overflow: hidden; white-space: nowrap;
+          font: 600 13px/1 var(--md-text-font-family, sans-serif);
+          opacity: 1; transform: translateX(0);
+          transition: opacity 120ms ease, transform 180ms cubic-bezier(.23, 1, .32, 1), max-width 180ms ease;
+          max-width: 160px;
+        }
+        #da-rag-bubble.is-compact .da-rag-trigger-label { max-width: 0; opacity: 0; transform: translateX(5px); }
         #da-rag-bubble:focus-visible, #da-rag-close:focus-visible,
         #da-rag-new:focus-visible,
         #da-rag-send:focus-visible, #da-rag-input:focus-visible,
@@ -141,22 +194,35 @@
           outline-offset: 2px;
         }
         #da-rag-widget {
-          position: fixed; bottom: 88px; right: 20px; z-index: 9999;
-          width: 340px; max-width: 90vw; height: 460px; max-height: 70vh;
+          position: fixed; bottom: 88px; right: 24px; z-index: 9999;
+          box-sizing: border-box; width: 380px; max-width: calc(100vw - 48px);
+          height: 560px; max-height: calc(100dvh - 120px);
           background: var(--md-default-bg-color, #fff);
           color: var(--md-default-fg-color, #000);
-          border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+          border-radius: 16px; box-shadow: 0 12px 36px rgba(18, 24, 45, .24);
           display: none; flex-direction: column; overflow: hidden;
+          opacity: 0; transform: scale(.95); transform-origin: bottom right;
+          visibility: hidden; pointer-events: none;
           font-family: var(--md-text-font-family, var(--md-text-font, sans-serif));
           border: 1px solid var(--md-default-fg-color--lightest, rgba(127,127,127,.22));
         }
-        #da-rag-widget.open { display: flex; }
+        #da-rag-widget.open { display: flex; opacity: 1; transform: scale(1); visibility: visible; pointer-events: auto; }
+        #da-rag-widget.closing { display: flex; visibility: visible; pointer-events: none; }
         #da-rag-header {
           background: var(--md-primary-fg-color, #3730a3); color: var(--md-primary-bg-color, #fff);
           padding: 10px 14px; font-weight: 600; font-size: 14px;
           display: flex; justify-content: space-between; align-items: center;
+          cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
         }
+        #da-rag-header.is-dragging { cursor: grabbing; }
         #da-rag-header-actions { display: flex; align-items: center; gap: 8px; }
+        #da-rag-header-actions button, #da-rag-header-actions summary { cursor: pointer; touch-action: auto; }
+        #da-rag-menu { position: relative; }
+        #da-rag-menu > summary { list-style: none; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 5px; font-size: 19px; line-height: 1; }
+        #da-rag-menu > summary::-webkit-details-marker { display: none; }
+        #da-rag-menu-content { position: absolute; z-index: 2; right: 0; top: calc(100% + 7px); width: max-content; padding: 5px; border-radius: 8px; background: var(--md-default-bg-color, #fff); color: var(--md-default-fg-color, #000); box-shadow: 0 5px 18px rgba(0,0,0,.24); border: 1px solid var(--md-default-fg-color--lightest, rgba(127,127,127,.22)); }
+        #da-rag-reset-position { border: 0; border-radius: 5px; padding: 8px 10px; background: transparent; color: inherit; font: inherit; font-size: 12px; white-space: nowrap; }
+        #da-rag-reset-position:hover { background: var(--md-default-bg-color--light, var(--md-code-bg-color, #f0f0f0)); }
         #da-rag-new {
           border: 1px solid currentColor; border-radius: 5px;
           background: transparent; color: inherit; cursor: pointer;
@@ -234,6 +300,8 @@
         @media (prefers-reduced-motion: reduce) {
           .da-rag-typing-dot { animation: none; opacity: .75; }
           .da-rag-suggestion:active { transform: none; }
+          #da-rag-bubble, #da-rag-bubble .da-rag-trigger-icon, #da-rag-bubble .da-rag-trigger-label { transition: none; }
+          #da-rag-bubble.is-snapping { transition: none; }
         }
         .da-rag-sources { margin-top: 6px; font-size: 11.5px; opacity: 0.75; }
         .da-rag-sources a { color: inherit; }
@@ -246,14 +314,18 @@
         #da-rag-send:disabled { cursor: wait; opacity: 0.45; }
         .da-rag-loading { opacity: 0.6; font-style: italic; }
         @media (max-width: 480px) {
-          #da-rag-bubble { bottom: 14px; right: 14px; }
+          #da-rag-bubble { bottom: 14px; right: 14px; width: 48px; height: 48px; padding: 0; }
+          #da-rag-bubble.is-compact { width: 48px; padding: 0; }
+          #da-rag-bubble .da-rag-trigger-label { display: none; }
+          #da-rag-header { cursor: default; touch-action: auto; }
           #da-rag-widget {
             box-sizing: border-box;
             left: env(safe-area-inset-left, 0px);
             right: env(safe-area-inset-right, 0px);
             bottom: env(safe-area-inset-bottom, 0px);
             width: auto; max-width: none;
-            height: min(560px, 86vh); max-height: 86vh; border-radius: 12px 12px 0 0;
+            height: 85vh; height: 85dvh; max-height: 85vh; max-height: 85dvh;
+            border-radius: 16px 16px 0 0; transform-origin: bottom center;
           }
         }
       `;
@@ -262,10 +334,19 @@
 
     const bubble = document.createElement("button");
     bubble.id = "da-rag-bubble";
-    bubble.title = "Assistente do curso";
-    bubble.setAttribute("aria-label", "Abrir assistente do curso");
-    bubble.setAttribute("aria-expanded", "false");
-    bubble.textContent = "💬";
+    bubble.type = "button";
+    bubble.title = "Abrir assistente";
+    bubble.setAttribute("aria-label", "Abrir assistente");
+    bubble.innerHTML = `
+      <svg class="da-rag-trigger-icon da-rag-trigger-chat" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+        <path d="M5.25 5.5h13.5A2.25 2.25 0 0 1 21 7.75v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.1l-4.9 3v-3H5.25A2.25 2.25 0 0 1 3 15.25v-7.5A2.25 2.25 0 0 1 5.25 5.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="m17.2 2.6.75 1.8 1.8.75-1.8.75-.75 1.8-.75-1.8-1.8-.75 1.8-.75.75-1.8Z" fill="currentColor"/>
+      </svg>
+      <svg class="da-rag-trigger-icon da-rag-trigger-close" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+        <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="da-rag-trigger-label" aria-hidden="true">Pergunte ao assistente</span>
+    `;
     document.body.appendChild(bubble);
 
     const widget = document.createElement("div");
@@ -278,6 +359,10 @@
         <span id="da-rag-title">Assistente do curso</span>
         <div id="da-rag-header-actions">
           <button id="da-rag-new" type="button">Nova conversa</button>
+          <details id="da-rag-menu">
+            <summary aria-label="Opções de posição" title="Opções">⋯</summary>
+            <div id="da-rag-menu-content"><button id="da-rag-reset-position" type="button">Voltar à posição padrão</button></div>
+          </details>
           <button id="da-rag-close" aria-label="Fechar assistente">✕</button>
         </div>
       </div>
@@ -289,6 +374,303 @@
     `;
     document.body.appendChild(widget);
 
+    function atualizarBotao() {
+      bubble.classList.toggle("is-open", estado.aberto);
+      bubble.setAttribute("aria-expanded", String(estado.aberto));
+    }
+    let movimentoPainel = null;
+    function animarPainel(abrindo, animar = true) {
+      const estiloAntes = getComputedStyle(widget);
+      const opacidadeAtual = estiloAntes.opacity;
+      const transformacaoAtual = estiloAntes.transform === "none" ? "scale(.95)" : estiloAntes.transform;
+      if (movimentoPainel) {
+        movimentoPainel.cancel();
+        movimentoPainel = null;
+      }
+
+      if (abrindo) {
+        widget.style.display = "flex";
+        widget.classList.remove("closing");
+        widget.classList.add("open");
+      } else {
+        widget.classList.remove("open");
+        widget.classList.add("closing");
+      }
+
+      const movimentoReduzido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!animar || movimentoReduzido || typeof widget.animate !== "function") {
+        if (!abrindo) {
+          widget.classList.remove("closing");
+          widget.style.display = "none";
+        }
+        return;
+      }
+
+      const movimento = widget.animate(
+        abrindo
+          ? [
+              { opacity: opacidadeAtual, transform: transformacaoAtual },
+              { opacity: 1, transform: "scale(1)" },
+            ]
+          : [
+              { opacity: opacidadeAtual, transform: transformacaoAtual },
+              { opacity: 0, transform: "scale(.95)" },
+            ],
+        {
+          duration: abrindo ? 200 : 120,
+          easing: "cubic-bezier(.23, 1, .32, 1)",
+        }
+      );
+      movimentoPainel = movimento;
+      movimento.onfinish = () => {
+        if (movimentoPainel !== movimento) return;
+        movimento.cancel();
+        movimentoPainel = null;
+        if (!abrindo && !estado.aberto) {
+          widget.classList.remove("closing");
+          widget.style.display = "none";
+        }
+      };
+    }
+    atualizarBotao();
+    bubble.classList.toggle("is-compact", window.scrollY > 80);
+    window.addEventListener("scroll", () => {
+      bubble.classList.toggle("is-compact", window.scrollY > 80);
+    }, { passive: true });
+
+    const cabecalhoEl = widget.querySelector("#da-rag-header");
+    const menuPosicaoEl = widget.querySelector("#da-rag-menu");
+    const margemTela = 12;
+    const emMobile = () => window.matchMedia("(max-width: 480px)").matches;
+    const larguraViewport = () => Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+    function aplicarPosicaoBotao(left, top) {
+      bubble.style.left = `${left}px`;
+      bubble.style.top = `${top}px`;
+      bubble.style.right = "auto";
+      bubble.style.bottom = "auto";
+      bubble.style.setProperty("--da-rag-drag-x", "0px");
+      bubble.style.setProperty("--da-rag-drag-y", "0px");
+    }
+    function restaurarPosicaoBotaoSalva() {
+      if (!posicoes.botao || !["esquerda", "direita"].includes(posicoes.botao.lado)) return;
+      const largura = bubble.getBoundingClientRect().width;
+      const altura = bubble.getBoundingClientRect().height;
+      const left = posicoes.botao.lado === "esquerda"
+        ? margemTela
+        : larguraViewport() - largura - margemTela;
+      const top = limitar(Number(posicoes.botao.top) || margemTela, margemTela, window.innerHeight - altura - margemTela);
+      aplicarPosicaoBotao(left, top);
+      posicoes.botao.top = top;
+    }
+    function definirPosicaoPainel(left, top) {
+      widget.style.left = `${left}px`;
+      widget.style.top = `${top}px`;
+      widget.style.right = "auto";
+      widget.style.bottom = "auto";
+    }
+    function limitarPosicaoPainel(left, top) {
+      const rect = widget.getBoundingClientRect();
+      const largura = widget.offsetWidth || rect.width;
+      const altura = widget.offsetHeight || rect.height;
+      return {
+        left: limitar(left, 24, larguraViewport() - largura - 24),
+        top: limitar(top, 24, window.innerHeight - altura - 24),
+      };
+    }
+    function aplicarPosicaoPainelSalva() {
+      if (!posicoes.painel || emMobile()) return false;
+      const displayAntes = widget.style.display;
+      const estavaOculto = getComputedStyle(widget).display === "none";
+      if (estavaOculto) widget.style.display = "flex";
+      widget.style.right = "auto";
+      widget.style.bottom = "auto";
+      const pos = limitarPosicaoPainel(Number(posicoes.painel.left) || 24, Number(posicoes.painel.top) || 24);
+      definirPosicaoPainel(pos.left, pos.top);
+      posicoes.painel = pos;
+      if (estavaOculto) widget.style.display = displayAntes;
+      return true;
+    }
+    function posicionarPainelPertoDoBotao() {
+      if (emMobile()) return;
+      const displayAntes = widget.style.display;
+      const estavaOculto = getComputedStyle(widget).display === "none";
+      if (estavaOculto) widget.style.display = "flex";
+      widget.style.left = "auto";
+      widget.style.top = "auto";
+      widget.style.right = "24px";
+      widget.style.bottom = "88px";
+      const botaoRect = bubble.getBoundingClientRect();
+      const painelRect = widget.getBoundingClientRect();
+      const painelLargura = widget.offsetWidth || painelRect.width;
+      const painelAltura = widget.offsetHeight || painelRect.height;
+      const margemVert = 24;
+      const topoAcima = botaoRect.top - painelAltura - 12;
+      const topoAbaixo = botaoRect.bottom + 12;
+      let topPreferido = topoAcima;
+      if (topoAcima < margemVert && topoAbaixo + painelAltura <= window.innerHeight - margemVert) {
+        topPreferido = topoAbaixo;
+      } else if (topoAcima < margemVert && window.innerHeight - botaoRect.bottom > botaoRect.top) {
+        topPreferido = topoAbaixo;
+      }
+      const leftPreferido = botaoRect.left + botaoRect.width / 2 < larguraViewport() / 2
+        ? botaoRect.left
+        : botaoRect.right - painelLargura;
+      const pos = limitarPosicaoPainel(leftPreferido, topPreferido);
+      definirPosicaoPainel(pos.left, pos.top);
+      if (estavaOculto) widget.style.display = displayAntes;
+    }
+    function limparPosicaoPainel() {
+      ["left", "top", "right", "bottom"].forEach((prop) => widget.style.removeProperty(prop));
+    }
+
+    restaurarPosicaoBotaoSalva();
+    if (!emMobile()) aplicarPosicaoPainelSalva();
+
+    let arrasteBotao = null;
+    let suprimirCliqueDoArraste = false;
+    bubble.addEventListener("pointerdown", (event) => {
+      if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
+      const rect = bubble.getBoundingClientRect();
+      arrasteBotao = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        left: rect.left,
+        top: rect.top,
+        dx: 0,
+        dy: 0,
+        moveu: false,
+      };
+      try { bubble.setPointerCapture(event.pointerId); } catch (_) { /* captura pode não estar disponível */ }
+    });
+    bubble.addEventListener("pointermove", (event) => {
+      if (!arrasteBotao || event.pointerId !== arrasteBotao.pointerId) return;
+      const dx = event.clientX - arrasteBotao.x;
+      const dy = event.clientY - arrasteBotao.y;
+      if (!arrasteBotao.moveu && Math.hypot(dx, dy) <= 5) return;
+      arrasteBotao.moveu = true;
+      bubble.classList.add("is-dragging");
+      const rect = bubble.getBoundingClientRect();
+      const left = limitar(arrasteBotao.left + dx, margemTela, larguraViewport() - rect.width - margemTela);
+      const top = limitar(arrasteBotao.top + dy, margemTela, window.innerHeight - rect.height - margemTela);
+      aplicarPosicaoBotao(arrasteBotao.left, arrasteBotao.top);
+      arrasteBotao.dx = left - arrasteBotao.left;
+      arrasteBotao.dy = top - arrasteBotao.top;
+      bubble.style.setProperty("--da-rag-drag-x", `${arrasteBotao.dx}px`);
+      bubble.style.setProperty("--da-rag-drag-y", `${arrasteBotao.dy}px`);
+      event.preventDefault();
+    });
+    function finalizarArrasteBotao(event) {
+      if (!arrasteBotao || (event && event.pointerId !== arrasteBotao.pointerId)) return;
+      const arraste = arrasteBotao;
+      arrasteBotao = null;
+      if (!arraste.moveu) return;
+      const rect = bubble.getBoundingClientRect();
+      const leftAtual = limitar(arraste.left + arraste.dx, margemTela, larguraViewport() - rect.width - margemTela);
+      const topAtual = limitar(arraste.top + arraste.dy, margemTela, window.innerHeight - rect.height - margemTela);
+      const distanciaEsquerda = leftAtual;
+      const distanciaDireita = larguraViewport() - (leftAtual + rect.width);
+      const lado = distanciaEsquerda <= distanciaDireita ? "esquerda" : "direita";
+      const leftAlvo = lado === "esquerda" ? margemTela : larguraViewport() - rect.width - margemTela;
+      const topAlvo = limitar(topAtual, margemTela, window.innerHeight - rect.height - margemTela);
+      aplicarPosicaoBotao(leftAlvo, topAlvo);
+      posicoes.botao = { lado, top: topAlvo };
+      salvarPosicoes();
+      bubble.classList.remove("is-dragging");
+      bubble.classList.add("is-snapping");
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        bubble.classList.remove("is-snapping");
+      } else {
+        bubble.style.setProperty("--da-rag-drag-x", `${leftAtual - leftAlvo}px`);
+        bubble.style.setProperty("--da-rag-drag-y", `${topAtual - topAlvo}px`);
+        bubble.getBoundingClientRect();
+        requestAnimationFrame(() => {
+          bubble.style.setProperty("--da-rag-drag-x", "0px");
+          bubble.style.setProperty("--da-rag-drag-y", "0px");
+        });
+      }
+      suprimirCliqueDoArraste = true;
+      window.setTimeout(() => { suprimirCliqueDoArraste = false; }, 300);
+    }
+    bubble.addEventListener("pointerup", finalizarArrasteBotao);
+    bubble.addEventListener("pointercancel", finalizarArrasteBotao);
+    bubble.addEventListener("lostpointercapture", finalizarArrasteBotao);
+    bubble.addEventListener("transitionend", (event) => {
+      if (event.propertyName !== "transform") return;
+      bubble.classList.remove("is-snapping");
+      bubble.style.setProperty("--da-rag-drag-x", "0px");
+      bubble.style.setProperty("--da-rag-drag-y", "0px");
+    });
+
+    let arrastePainel = null;
+    cabecalhoEl.addEventListener("pointerdown", (event) => {
+      if (emMobile() || !event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
+      if (event.target.closest("button, summary, a, input")) return;
+      const rect = widget.getBoundingClientRect();
+      arrastePainel = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        left: rect.left,
+        top: rect.top,
+        moveu: false,
+      };
+      try { cabecalhoEl.setPointerCapture(event.pointerId); } catch (_) { /* captura pode não estar disponível */ }
+    });
+    cabecalhoEl.addEventListener("pointermove", (event) => {
+      if (!arrastePainel || event.pointerId !== arrastePainel.pointerId) return;
+      const dx = event.clientX - arrastePainel.x;
+      const dy = event.clientY - arrastePainel.y;
+      if (!arrastePainel.moveu && Math.hypot(dx, dy) <= 5) return;
+      arrastePainel.moveu = true;
+      cabecalhoEl.classList.add("is-dragging");
+      const pos = limitarPosicaoPainel(arrastePainel.left + dx, arrastePainel.top + dy);
+      definirPosicaoPainel(pos.left, pos.top);
+      event.preventDefault();
+    });
+    function finalizarArrastePainel(event) {
+      if (!arrastePainel || (event && event.pointerId !== arrastePainel.pointerId)) return;
+      const arraste = arrastePainel;
+      arrastePainel = null;
+      cabecalhoEl.classList.remove("is-dragging");
+      if (!arraste.moveu) return;
+      const rect = widget.getBoundingClientRect();
+      posicoes.painel = limitarPosicaoPainel(rect.left, rect.top);
+      definirPosicaoPainel(posicoes.painel.left, posicoes.painel.top);
+      salvarPosicoes();
+    }
+    cabecalhoEl.addEventListener("pointerup", finalizarArrastePainel);
+    cabecalhoEl.addEventListener("pointercancel", finalizarArrastePainel);
+    cabecalhoEl.addEventListener("lostpointercapture", finalizarArrastePainel);
+
+    window.addEventListener("resize", () => {
+      if (posicoes.botao) restaurarPosicaoBotaoSalva();
+      if (emMobile()) {
+        limparPosicaoPainel();
+      } else if (posicoes.painel) {
+        aplicarPosicaoPainelSalva();
+        if (estado.aberto) widget.style.display = "flex";
+      } else if (estado.aberto) {
+        posicionarPainelPertoDoBotao();
+      } else {
+        limparPosicaoPainel();
+      }
+      salvarPosicoes();
+    });
+
+    widget.querySelector("#da-rag-reset-position").addEventListener("click", () => {
+      delete posicoes.botao;
+      delete posicoes.painel;
+      try { localStorage.removeItem(POSITION_KEY); } catch (_) { /* posição padrão continua disponível */ }
+      ["left", "top", "right", "bottom"].forEach((prop) => bubble.style.removeProperty(prop));
+      bubble.style.setProperty("--da-rag-drag-x", "0px");
+      bubble.style.setProperty("--da-rag-drag-y", "0px");
+      bubble.classList.remove("is-dragging", "is-snapping");
+      limparPosicaoPainel();
+      menuPosicaoEl.open = false;
+      if (estado.aberto && !emMobile()) posicionarPainelPertoDoBotao();
+    });
+
     const inputEl = widget.querySelector("#da-rag-input");
     const sendButton = widget.querySelector("#da-rag-send");
     const messagesEl = widget.querySelector("#da-rag-messages");
@@ -299,8 +681,9 @@
     // resto do código (addMessage) sempre busca o container atual de novo.
     estado.mensagens.forEach((m) => renderizarMensagem(messagesEl, m));
     if (estado.aberto) {
-      widget.classList.add("open");
-      bubble.setAttribute("aria-expanded", "true");
+      if (!emMobile() && !aplicarPosicaoPainelSalva()) posicionarPainelPertoDoBotao();
+      animarPainel(true, false);
+      atualizarBotao();
       if (estado.mensagens.length === 0) {
         addMessage(MENSAGEM_BOAS_VINDAS, "bot", null, false, true);
       }
@@ -309,10 +692,10 @@
     mostrarSugestoes(messagesEl);
 
     function fecharWidget() {
-      widget.classList.remove("open");
       estado.aberto = false;
+      animarPainel(false);
       salvarEstado();
-      bubble.setAttribute("aria-expanded", "false");
+      atualizarBotao();
       bubble.focus();
     }
 
@@ -452,15 +835,20 @@
       }
     }
 
-    bubble.addEventListener("click", () => {
+    bubble.addEventListener("click", (event) => {
+      if (suprimirCliqueDoArraste) {
+        event.preventDefault();
+        return;
+      }
       if (estado.aberto) {
         fecharWidget();
         return;
       }
-      widget.classList.add("open");
       estado.aberto = true;
+      if (!emMobile() && !aplicarPosicaoPainelSalva()) posicionarPainelPertoDoBotao();
+      animarPainel(true);
       salvarEstado();
-      bubble.setAttribute("aria-expanded", "true");
+      atualizarBotao();
       if (estado.mensagens.length === 0) {
         addMessage(MENSAGEM_BOAS_VINDAS, "bot", null, false, true);
       }
