@@ -87,7 +87,15 @@ class OracleRepository:
                 "INSERT INTO conversas (token_hash) VALUES (:token_hash) RETURNING id INTO :conversation_id",
                 {"token_hash": digest, "conversation_id": conversation_id},
             )
-            return str(conversation_id.getvalue()), token
+            # python-oracledb can expose an OUT bind as a one-item sequence.
+            # Stringifying that sequence stores "['ID']" in the browser; the
+            # next request then cannot validate the conversation against Oracle.
+            value = conversation_id.getvalue()
+            if isinstance(value, (list, tuple)):
+                value = value[0] if value else None
+            if value is None:
+                raise RuntimeError("Oracle não retornou o ID da conversa criada")
+            return str(value).strip(), token
 
     @staticmethod
     def _valid_conversation(connection: oracledb.Connection, conversation_id: str, token: str) -> bool:
