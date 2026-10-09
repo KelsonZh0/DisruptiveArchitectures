@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+# pyrefly: ignore [missing-import]
 import pytest
 from fastapi import HTTPException
 

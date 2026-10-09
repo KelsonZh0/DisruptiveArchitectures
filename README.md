@@ -98,13 +98,13 @@ Conecte no SQL Developer com o usuário da aplicação e execute
 `backend/migrations/oracle_001_initial_schema.sql`. A conta precisa poder criar
 tabelas e índices. A migration ainda não carrega os chunks automaticamente.
 
-## Assistente RAG — etapa 3 (API local)
+## Assistente RAG — etapa 3 (API)
 
 O backend oferece POST /ask, GET /health e GET /conversas/{id}. Para instalar
 e iniciar no PowerShell, a partir da raiz do repositório:
 
 ~~~powershell
-py -3.14 -m pip install --user -r backend\requirements.txt
+py -3.12 -m pip install --user -r requirements.txt
 $env:ORACLE_USER = "SEU_USUARIO_FIAP"
 $env:ORACLE_PASSWORD = "SUA_SENHA"
 $env:ORACLE_HOST = "oracle.fiap.com.br"
@@ -116,7 +116,7 @@ $env:GEMINI_API_KEY = "SUA_CHAVE_GEMINI" # opcional se GROQ_API_KEY estiver conf
 $env:GROQ_API_KEY = "SUA_CHAVE_GROQ" # fallback ou provedor único
 $env:ALLOWED_ORIGIN = "http://127.0.0.1:8001" # site MkDocs local
 $env:PYTHONPATH = (Get-Location).Path
-py -3.14 -m uvicorn backend.app.main:app --reload --port 8000
+py -3.12 -m uvicorn backend.app.main:app --reload --port 8000
 ~~~
 
 Abra http://127.0.0.1:8000/health para conferir o processo. O endpoint /ask só
@@ -145,10 +145,48 @@ os limites e a disponibilidade dependem da conta Groq. O nome do modelo pode
 ser alterado com `GROQ_MODEL`.
 
 O workflow de publicação do MkDocs publica apenas o site estático, não o
-backend. Para usar o chat no site publicado, hospede a API em um endereço HTTPS,
-defina-o em `material/js/chat-config.js` e permita a origem do site na
-configuração CORS do backend. Em localhost, o widget usa automaticamente
+backend. Em desenvolvimento local, o widget usa automaticamente
 `http://127.0.0.1:8000/ask`.
+
+### Publicar a API no Vercel
+
+A raiz do repositório está configurada para o Vercel executar
+`backend.app.main:app` como uma função Python. O arquivo `requirements.txt`
+contém as dependências da API; `docs-requirements.txt` contém as dependências
+do MkDocs. Para publicar a API:
+
+1. Instale o Vercel CLI (`npm install --global vercel`) e autentique com
+   `vercel login`.
+2. Na raiz do repositório, execute `vercel link` e associe o projeto à sua
+   conta/equipe Vercel.
+3. No painel do projeto Vercel, cadastre as variáveis abaixo nos ambientes
+   **Production** e **Preview**. Use os valores secretos diretamente no painel;
+   não os coloque no Git nem os envie pelo chat.
+
+   - `ORACLE_USER`, `ORACLE_PASSWORD`, `ORACLE_HOST`, `ORACLE_PORT` e
+     `ORACLE_SID` ou `ORACLE_SERVICE_NAME`
+   - `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`
+   - `GEMINI_API_KEY` e/ou `GROQ_API_KEY`
+   - `ALLOWED_ORIGIN=https://arnaldojr.github.io`
+
+   O Oracle da FIAP precisa aceitar conexões externas originadas da Vercel.
+   Se a rede ou política da FIAP bloquear esse acesso, a API hospedada não
+   conseguirá consultar os dados, mesmo com as credenciais corretas.
+4. Publique primeiro um preview com `vercel deploy`. Confira
+   `https://<url-do-preview>/health` (deve retornar `{"status":"ok"}`) e
+   `https://<url-do-preview>/docs`. Depois de configurar e validar as variáveis,
+   publique em produção com `vercel deploy --prod`.
+5. Copie a URL HTTPS de produção para `window.DA_RAG_API_URL` em
+   `material/js/chat-config.js`, acrescentando `/ask` ao final. Faça commit e
+   push para atualizar o site GitHub Pages; a API e o site são deploys
+   separados.
+
+As variáveis do Vercel só ficam disponíveis em novos deploys: depois de alterar
+uma variável, gere outro deploy. A publicação no Vercel ainda depende de acesso
+à conta Vercel e de conectividade externa do Oracle da FIAP.
+
+Para instalar as dependências do site localmente, use
+`python -m pip install -r docs-requirements.txt` e rode `python -m mkdocs serve`.
 
 Para executar os testes automatizados:
 

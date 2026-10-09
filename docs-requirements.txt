@@ -1,0 +1,9 @@
+# Dependencies used only to build and publish the MkDocs course site.
+mkdocs
+Pygments
+markdown
+pymdown-extensions
+mkdocs-material
+mkdocs-jupyter
+mkdocs-git-revision-date-localized-plugin
+requests

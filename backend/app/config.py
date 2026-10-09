@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     cloudflare_account_id: str = ""
     cloudflare_api_token: SecretStr = SecretStr("")
     vectorize_index: str = "disruptive-architectures-index"
-    allowed_origin: AnyHttpUrl = "https://kelsonzh0.github.io"
+    allowed_origin: AnyHttpUrl = "https://arnaldojr.github.io"
     max_question_chars: int = Field(default=2000, ge=100, le=10000)
     max_history_turns: int = Field(default=8, ge=0, le=20)
     retrieval_top_k: int = Field(default=8, ge=1, le=30)
