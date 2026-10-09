@@ -6,14 +6,14 @@ Olá pessoal, bem vindos!! Neste repositório você irá encontrar os conteúdos
 
 Acesse o site:
 
-- [website: https://arnaldojr.github.io/DisruptiveArchitectures/](https://arnaldojr.github.io/DisruptiveArchitectures/)
+- [website: https://kelsonzh0.github.io/DisruptiveArchitectures/](https://kelsonzh0.github.io/DisruptiveArchitectures/)
 
 
 ## Como clonar o repositório
 
 ``` bash
 $ # no terminal digite
-$ git clone https://github.com/arnaldojr/DisruptiveArchitectures/
+$ git clone https://github.com/KelsonZh0/DisruptiveArchitectures/
 
 ```
 
@@ -167,7 +167,7 @@ do MkDocs. Para publicar a API:
      `ORACLE_SID` ou `ORACLE_SERVICE_NAME`
    - `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`
    - `GEMINI_API_KEY` e/ou `GROQ_API_KEY`
-   - `ALLOWED_ORIGIN=https://arnaldojr.github.io`
+   - `ALLOWED_ORIGIN=https://kelsonzh0.github.io`
 
    O Oracle da FIAP precisa aceitar conexões externas originadas da Vercel.
    Se a rede ou política da FIAP bloquear esse acesso, a API hospedada não

@@ -22,7 +22,7 @@ Explore os laboratórios e materiais do curso por trilha.
 </div>
 
 **Tecnologia em Desenvolvimento de Sistemas · 2026 · Prof. Arnaldo Viana**
-[Repositório da disciplina](https://github.com/arnaldojr/DisruptiveArchitectures/)
+[Repositório do fork](https://github.com/KelsonZh0/DisruptiveArchitectures/)
 
 ---
 
