@@ -185,7 +185,7 @@
   --course-button-color: #ff9b7c;
 }
 
-.course-home .grid.cards .md-button {
+.md-typeset .course-home .grid.cards a.md-button {
   border: 1px solid var(--course-button-color);
   background: transparent;
   color: var(--course-button-color);
@@ -193,14 +193,14 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .course-home .grid.cards .md-button:hover {
+  .md-typeset .course-home .grid.cards a.md-button:hover {
     border-color: var(--course-button-color);
     background: color-mix(in srgb, var(--course-button-color) 12%, transparent);
     color: var(--course-button-color);
   }
 }
 
-.course-home .grid.cards .md-button:focus-visible {
+.md-typeset .course-home .grid.cards a.md-button:focus-visible {
   border-color: var(--course-button-color);
   background: color-mix(in srgb, var(--course-button-color) 12%, transparent);
   color: var(--course-button-color);
