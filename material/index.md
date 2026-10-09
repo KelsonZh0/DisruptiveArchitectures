@@ -38,6 +38,7 @@ Tecnologia em Desenvolvimento de Sistemas · 2026 · Prof. Arnaldo Viana
 
 ---
 
+<div class="course-home-content" markdown>
 
 ## Objetivos de aprendizagem
 
@@ -101,3 +102,5 @@ Em nuvem:
 - Stewart Russel e Peter Norvig . Inteligência artificial. 3ª. Ed., Rio de Janeiro: Campus, 2012.
 - George F. Luger . Inteligência Artificial, 6ª ed. São Paulo: Pearson Education do Brasil, 2013 (biblioteca virtual)
 - Aurélien Geron. 2019. Hands-On Machine Learning with Scikit-Learn, Keras, and Tensorflow: Concepts, Tools, and Techniques to Build Intelligent Systems
+
+</div>

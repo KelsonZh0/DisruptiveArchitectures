@@ -90,7 +90,7 @@
   font-family: "IBM Plex Mono", Consolas, monospace;
 }
 
-/* Let the home cards use the content grid; keep the remaining home prose readable. */
+/* Let the home hero and the rest of the page share one centered container. */
 .md-main .md-content .md-content__inner.md-typeset:has(.course-home) {
   box-sizing: border-box;
   width: 100%;
@@ -99,9 +99,16 @@
   padding-bottom: 6rem;
 }
 
-.md-typeset:has(.course-home) > :not(.course-home) {
-  max-width: 68ch;
+.course-home-content {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1100px;
   margin-inline: auto;
+}
+
+.course-home-content > :not(.grid) {
+  max-width: 68ch;
+  margin-inline: 0;
 }
 
 .course-home {
@@ -173,7 +180,7 @@
 .course-home-attribution {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 0.35rem 1.5rem;
   color: var(--md-default-fg-color--light);
