@@ -87,6 +87,7 @@ class OracleRepository:
                 "INSERT INTO conversas (token_hash) VALUES (:token_hash) RETURNING id INTO :conversation_id",
                 {"token_hash": digest, "conversation_id": conversation_id},
             )
+            connection.commit()
             # python-oracledb can expose an OUT bind as a one-item sequence.
             # Stringifying that sequence stores "['ID']" in the browser; the
             # next request then cannot validate the conversation against Oracle.
@@ -157,6 +158,7 @@ class OracleRepository:
                     "erro": error,
                 },
             )
+            connection.commit()
 
     def get_conversation(self, conversation_id: str, token: str) -> list[dict[str, Any]] | None:
         with self._connect() as connection:
