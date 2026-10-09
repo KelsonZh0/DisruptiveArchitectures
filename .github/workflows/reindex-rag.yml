@@ -9,7 +9,13 @@ on:
       - "scripts/ingest.py"
       - "scripts/embed_with_workers_ai.py"
       - "scripts/build_vectorize_ndjson.py"
+      - "scripts/load_chunks_oracle.py"
+      - "scripts/prune_vectorize.py"
   workflow_dispatch:
+
+concurrency:
+  group: rag-reindex
+  cancel-in-progress: false
 
 jobs:
   reindex:
@@ -24,7 +30,7 @@ jobs:
           python-version: "3.11"
 
       - name: Instalar dependências
-        run: python -m pip install requests
+        run: python -m pip install requests oracledb
 
       - name: Extrair Markdown e notebooks em chunks
         working-directory: scripts
@@ -51,6 +57,18 @@ jobs:
             --input chunks_embedded.jsonl \
             --output vectors.ndjson
 
+      - name: Sincronizar chunks no Oracle
+        working-directory: scripts
+        env:
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          ORACLE_PASSWORD: ${{ secrets.ORACLE_PASSWORD }}
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_PORT: ${{ secrets.ORACLE_PORT }}
+          ORACLE_SID: ${{ secrets.ORACLE_SID }}
+          ORACLE_SERVICE_NAME: ${{ secrets.ORACLE_SERVICE_NAME }}
+        run: |
+          python load_chunks_oracle.py --input chunks.jsonl
+
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
@@ -67,3 +85,10 @@ jobs:
         run: |
           wrangler vectorize upsert disruptive-architectures-index \
             --file=vectors.ndjson
+
+      - name: Remover vetores que saíram do material
+        working-directory: scripts
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: python prune_vectorize.py --input vectors.ndjson

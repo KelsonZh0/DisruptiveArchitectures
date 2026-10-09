@@ -61,9 +61,12 @@ python scripts\build_vectorize_ndjson.py `
 ```
 
 Esses dois últimos comandos fazem chamadas ao Cloudflare Workers AI. O workflow
-do GitHub também os executa após push, usando os secrets configurados no
-repositório. O arquivo final pode ser enviado ao índice Vectorize pelo Wrangler
-com o comando configurado no workflow; isso altera o índice remoto.
+do GitHub também os executa após push. Configure os secrets
+`CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`, `ORACLE_USER` e
+`ORACLE_PASSWORD` no repositório. Se necessário, configure também
+`ORACLE_HOST`, `ORACLE_PORT`, `ORACLE_SID` ou `ORACLE_SERVICE_NAME`. O workflow
+sincroniza os chunks no Oracle, atualiza o Vectorize e remove os IDs que saíram
+do material.
 
 ### Carregar os chunks no Oracle
 
@@ -74,8 +77,9 @@ etapa 3 e execute:
 python scripts\load_chunks_oracle.py --input scripts\chunks.jsonl
 ```
 
-O script cria uma versão de ingestão e insere os chunks em `reindex_runs` e
-`chunks`. Ele não envia embeddings ao Vectorize; essa é uma etapa separada.
+O script cria uma versão de ingestão e sincroniza os chunks em `reindex_runs` e
+`chunks`, removendo da tabela os chunks que já não aparecem na extração. Ele não
+envia embeddings ao Vectorize; essa é uma etapa separada.
 Se a geração de embeddings falhar e deixar um JSONL parcial, repita o comando
 de embeddings acrescentando `--resume`; o script valida e preserva os chunks
 já processados e informa o ID do chunk caso a Cloudflare rejeite um texto.
@@ -108,17 +112,19 @@ $env:ORACLE_PORT = "1521"
 $env:ORACLE_SID = "orcl"
 # Se a FIAP fornecer service name, use-o no lugar do SID:
 # $env:ORACLE_SERVICE_NAME = "SERVICE_NAME_FORNECIDO"
-$env:GROQ_API_KEY = "SUA_CHAVE_GROQ" # opcional: fallback depois dos modelos Gemini
+$env:GEMINI_API_KEY = "SUA_CHAVE_GEMINI" # opcional se GROQ_API_KEY estiver configurada
+$env:GROQ_API_KEY = "SUA_CHAVE_GROQ" # fallback ou provedor único
+$env:ALLOWED_ORIGIN = "http://127.0.0.1:8001" # site MkDocs local
 $env:PYTHONPATH = (Get-Location).Path
 py -3.14 -m uvicorn backend.app.main:app --reload --port 8000
 ~~~
 
 Abra http://127.0.0.1:8000/health para conferir o processo. O endpoint /ask só
 funcionará quando houver dados no Oracle e as variáveis de ambiente
-estiverem configuradas: ORACLE_USER, ORACLE_PASSWORD, GEMINI_API_KEY,
-CLOUDFLARE_ACCOUNT_ID e CLOUDFLARE_API_TOKEN. GROQ_API_KEY é opcional e ativa
-o fallback Groq; sem ela, o backend usa apenas Gemini. Configure as chaves no terminal
-ou em um .env local que não seja commitado. O driver `python-oracledb` usa Thin
+estiverem configuradas: ORACLE_USER, ORACLE_PASSWORD, um provedor de geração
+(`GEMINI_API_KEY` ou `GROQ_API_KEY`), CLOUDFLARE_ACCOUNT_ID e
+CLOUDFLARE_API_TOKEN. Configure as chaves no terminal ou em um `.env` local
+que não seja commitado. O driver `python-oracledb` usa Thin
 mode por padrão e não exige Oracle Client para uma conexão TCP normal. Para
 consultas ao Vectorize, o token também precisa de `Vectorize Read`; para
 publicar embeddings no índice, precisa de `Vectorize Edit`. A chave do Gemini
@@ -133,9 +139,16 @@ do modelo acaba; não resolve uma cota ou limite de gastos esgotado para todo o
 projeto Google.
 Depois de esgotar os modelos Gemini por cota, limite ou indisponibilidade
 temporária, o backend tenta `openai/gpt-oss-20b` pela API Groq quando
-`GROQ_API_KEY` está configurada. Esse modelo suporta saída JSON estruturada;
+`GROQ_API_KEY` está configurada. Se `GEMINI_API_KEY` não estiver configurada,
+o Groq é usado diretamente. Esse modelo suporta saída JSON estruturada;
 os limites e a disponibilidade dependem da conta Groq. O nome do modelo pode
 ser alterado com `GROQ_MODEL`.
+
+O workflow de publicação do MkDocs publica apenas o site estático, não o
+backend. Para usar o chat no site publicado, hospede a API em um endereço HTTPS,
+defina-o em `material/js/chat-config.js` e permita a origem do site na
+configuração CORS do backend. Em localhost, o widget usa automaticamente
+`http://127.0.0.1:8000/ask`.
 
 Para executar os testes automatizados:
 

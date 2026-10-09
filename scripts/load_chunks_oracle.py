@@ -17,10 +17,10 @@ def main() -> None:
 
     user = os.environ.get("ORACLE_USER", "")
     password = os.environ.get("ORACLE_PASSWORD", "")
-    host = os.environ.get("ORACLE_HOST", "oracle.fiap.com.br")
-    port = int(os.environ.get("ORACLE_PORT", "1521"))
-    service_name = os.environ.get("ORACLE_SERVICE_NAME", "")
-    sid = os.environ.get("ORACLE_SID", "orcl")
+    host = os.environ.get("ORACLE_HOST") or "oracle.fiap.com.br"
+    port = int(os.environ.get("ORACLE_PORT") or "1521")
+    service_name = os.environ.get("ORACLE_SERVICE_NAME") or ""
+    sid = os.environ.get("ORACLE_SID") or "orcl"
     if not user or not password:
         raise SystemExit("Defina ORACLE_USER e ORACLE_PASSWORD no PowerShell antes de carregar.")
     dsn = f"{host}:{port}/{service_name or sid}"
@@ -84,6 +84,9 @@ def main() -> None:
             if errors:
                 first = errors[0]
                 raise RuntimeError(f"Falha ao inserir chunk na linha do arquivo {first.offset + 1}: {first.message}")
+            # A nova ingestão já foi aplicada por completo dentro desta transação;
+            # agora remova do Oracle páginas/chunks que desapareceram do material.
+            cursor.execute("DELETE FROM chunks WHERE versao_ingestao <> :versao", {"versao": version})
             cursor.execute(
                 "UPDATE reindex_runs SET status = 'active', concluido_em = SYSTIMESTAMP WHERE versao = :versao",
                 {"versao": version},

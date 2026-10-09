@@ -99,6 +99,11 @@ class OracleRepository:
         )
         return cursor.fetchone() is not None
 
+    def validate_conversation(self, conversation_id: str, token: str) -> bool:
+        """Validate the opaque conversation token before spending model/API calls."""
+        with self._connect() as connection:
+            return self._valid_conversation(connection, conversation_id, token)
+
     def save_interaction(
         self,
         conversation_id: str | None,

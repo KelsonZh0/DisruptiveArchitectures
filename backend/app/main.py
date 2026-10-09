@@ -14,7 +14,8 @@ def create_app(settings: Settings | None = None, rag_service: RAGService | None 
     config = settings or get_settings()
     logging.basicConfig(level=config.log_level.upper())
     app = FastAPI(title="Disruptive Architectures RAG API", version="0.1.0")
-    app.add_middleware(CORSMiddleware, allow_origins=[str(config.allowed_origin).rstrip("/")], allow_credentials=False, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "X-Conversa-Token"])
+    origins = [str(config.allowed_origin).rstrip("/"), "http://127.0.0.1:8001", "http://localhost:8001"]
+    app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=False, allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "X-Conversa-Token"])
     db = OracleRepository(config.oracle_user, config.oracle_password.get_secret_value(), config.oracle_dsn)
     app.state.settings, app.state.db = config, db
     app.state.rag = rag_service or RAGService(

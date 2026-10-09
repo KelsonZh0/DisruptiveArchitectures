@@ -39,7 +39,19 @@ def ask(request: Request, payload: AskRequest) -> AskResponse:
         raise HTTPException(status_code=429, detail="Limite de perguntas atingido. Tente novamente em instantes.")
     if len(payload.pergunta) > settings.max_question_chars:
         raise HTTPException(status_code=413, detail="A pergunta excede o tamanho permitido.")
-    if not payload.conversa_id or not payload.conversa_token:
+    has_conversation_id = bool(payload.conversa_id)
+    has_conversation_token = bool(payload.conversa_token)
+    if has_conversation_id != has_conversation_token:
+        raise HTTPException(status_code=422, detail="Envie o ID e o token da conversa juntos.")
+    if has_conversation_id:
+        try:
+            valid = request.app.state.db.validate_conversation(payload.conversa_id, payload.conversa_token)
+        except Exception as error:
+            logger.exception("Falha ao validar conversa")
+            raise HTTPException(status_code=503, detail="Não foi possível validar a conversa.") from error
+        if not valid:
+            raise HTTPException(status_code=401, detail="ID ou token da conversa inválido.")
+    else:
         try:
             payload.conversa_id, payload.conversa_token = request.app.state.db.create_conversation()
         except Exception as error:

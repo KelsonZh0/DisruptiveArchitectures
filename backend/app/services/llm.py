@@ -120,6 +120,12 @@ class GeminiService:
         return SimpleNamespace(text=content, usage_metadata=usage_metadata)
 
     def _generate(self, *, contents: str, config: types.GenerateContentConfig, structured: bool = False):
+        if self.client is None:
+            if not self.groq_api_key:
+                raise RuntimeError("Configure GEMINI_API_KEY ou GROQ_API_KEY")
+            logger.info("GEMINI_API_KEY ausente; usando Groq (%s)", self.groq_model)
+            self.active_model = f"groq:{self.groq_model}"
+            return self._generate_groq(contents=contents, config=config, structured=structured)
         try:
             return self._generate_gemini(contents=contents, config=config)
         except APIError as error:
@@ -133,8 +139,6 @@ class GeminiService:
             return self._generate_groq(contents=contents, config=config, structured=structured)
 
     def answer(self, question: str, history: list[dict[str, str]], chunks: list[Chunk]) -> ModelAnswer:
-        if self.client is None:
-            raise RuntimeError("GEMINI_API_KEY não está configurada")
         history_text = "\n".join(f"{x['papel']}: {x['conteudo']}" for x in history)
         evidence = "\n\n".join(f"<chunk id=\"{x.id}\" titulo=\"{x.titulo}\">\n{x.texto}\n</chunk>" for x in chunks)
         prompt = f"Histórico:\n{history_text}\n\nPergunta:\n{question}\n\n<evidencias>\n{evidence}\n</evidencias>"
@@ -158,8 +162,6 @@ class GeminiService:
         return ModelAnswer.model_validate(json.loads(response.text))
 
     def rewrite_query(self, question: str, history: list[dict[str, str]]) -> str:
-        if self.client is None:
-            raise RuntimeError("GEMINI_API_KEY não está configurada")
         if not history:
             return question
         prompt = (

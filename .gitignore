@@ -9,4 +9,7 @@ backend/.venv*/
 backend/.deps*/
 scripts/chunks*.jsonl
 scripts/chunks_embedded*.jsonl
+scripts/chunks.json
+scripts/chunks_embedded.json
+scripts/vectors.ndjson
 .agents
