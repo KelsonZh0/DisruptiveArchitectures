@@ -1088,8 +1088,11 @@
           !url.username &&
           !url.password
         );
-        if (valida && !unicas.has(url.href)) {
-          unicas.set(url.href, {
+        // Um mesmo documento pode aparecer em vários resultados com âncoras
+        // diferentes. Para a lista de fontes, mantenha só um chip por página.
+        const chavePagina = `${url.origin}${url.pathname}${url.search}`;
+        if (valida && !unicas.has(chavePagina)) {
+          unicas.set(chavePagina, {
             titulo: typeof fonte.titulo === "string" ? fonte.titulo : url.href,
             url: url.href,
           });
